@@ -341,13 +341,6 @@ const renderers = {
                             ${this.renderField({ key: 'labelSeconds', label: 'Seconds Label', type: 'text' }, page, pageIndex)}
                         </div>
                     </div>
-                    <div class="field-group-card">
-                        <div class="field-group-title"><span class="material-symbols-outlined text-xs">branding_watermark</span> Footer & Transitions</div>
-                        <div class="grid md:grid-cols-2 gap-6">
-                            ${this.renderField({ key: 'footerText', label: 'Small footer message', type: 'text' }, page, pageIndex)}
-                            ${this.renderField({ key: 'buttonText', label: 'Continue Button', type: 'text' }, page, pageIndex)}
-                        </div>
-                    </div>
                 </div>
             </div>
         `;
@@ -405,10 +398,6 @@ const renderers = {
                     ${this.renderField({ key: 'pins', label: 'Manage Locations', type: 'list', itemType: 'pin' }, page, pageIndex)}
                 </div>
 
-                <div class="field-group-card">
-                    <div class="field-group-title"><span class="material-symbols-outlined text-xs">settings</span> Controls</div>
-                    ${this.renderField({ key: 'buttonText', label: 'Continue Button Text', type: 'text' }, page, pageIndex)}
-                </div>
             </div>
         `;
     },

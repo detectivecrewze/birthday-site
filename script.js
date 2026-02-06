@@ -808,7 +808,7 @@ window.app = {
                                         <input id="secret-input" 
                                                onkeyup="if(event.key === 'Enter') app.checkSecret()"
                                                oninput="const err = document.getElementById('secret-error'); if(err) err.classList.add('hidden')"
-                                               class="w-full bg-transparent border-0 focus:ring-0 text-vintage-ink font-inter text-lg px-1 placeholder:text-vintage-ink/30 custom-input focus:placeholder-transparent" 
+                                               class="w-full bg-transparent border-0 focus:ring-0 text-vintage-ink font-handwritten text-2xl px-1 placeholder:text-vintage-ink/40 custom-input focus:placeholder-transparent" 
                                                placeholder="${data.placeholder}" 
                                                type="password"/>
                                     </div>
@@ -1633,14 +1633,15 @@ window.app = {
                 ${index % 2 === 0 ? `<div class="washi-tape-custom washi-bottom-right ${isPreview ? '' : 'opacity-0 animate-fade-in'}" style="--tape-color: ${tapeColors[(index + 1) % tapeColors.length]}; ${!isPreview ? `animation-delay: ${tapeDelay}s` : ''}"></div>` : ''}
                 <div class="polaroid-inner">
                     <div class="polaroid-front polaroid-frame">
-                        <div class="relative overflow-hidden bg-stone-100">
+                        <div class="relative overflow-hidden bg-stone-100 rounded-sm">
                             <img src="${photo.url}" class="memory-photo w-full h-[220px] md:h-[260px] object-cover" alt="Memory">
+                            ${!isPreview ? `<canvas id="scratch-${index}" class="absolute inset-0 w-full h-full cursor-pointer z-20 touch-none transition-opacity duration-500"></canvas>` : ''}
                         </div>
                         <div class="mt-4 flex flex-col gap-1">
                             <p class="handwritten text-xl md:text-2xl leading-tight text-ink-black/80">${photo.caption || ''}</p>
                             <span class="polaroid-date ml-auto uppercase tracking-tighter opacity-50">${photo.date || ''}</span>
                         </div>
-                        <div class="flip-hint">Click to flip</div>
+                        <div id="hint-${index}" class="flip-hint ${!isPreview ? 'opacity-0' : ''}">Click to flip</div>
                     </div>
                     <div class="polaroid-back polaroid-frame">
                         <div class="scribble-note text-xl md:text-2xl">${photo.backNote || "A memory worth keeping forever..."}</div>
@@ -1651,11 +1652,27 @@ window.app = {
             `;
 
             card.onclick = () => {
-                card.classList.toggle('is-flipped');
-                this.playSfx('https://assets.mixkit.co/active_storage/sfx/2560/2560-preview.mp3', 0.1);
+                const canvas = document.getElementById(`scratch-${index}`);
+                // Only flip if preview OR if scratch is finished (canvas is gone/hidden)
+                if (isPreview || !canvas || canvas.style.opacity === '0') {
+                    card.classList.toggle('is-flipped');
+                    this.playSfx('https://assets.mixkit.co/active_storage/sfx/2560/2560-preview.mp3', 0.1);
+                }
             };
 
             grid.appendChild(card);
+
+            // Initialize scratch if not in preview
+            if (!isPreview) {
+                const timeout = setTimeout(() => {
+                    const canvas = document.getElementById(`scratch-${index}`);
+                    const hint = document.getElementById(`hint-${index}`);
+                    if (canvas) {
+                        this.initPolaroidScratch(canvas, hint);
+                    }
+                }, 2000 + (index * 800)); // Start after it falls
+                this.activeAnimations.push(timeout);
+            }
         });
 
         // Show continue button after polaroids animate in
@@ -3147,6 +3164,99 @@ window.app = {
 
             this.navigateWithTransition(index);
         }
+    },
+
+    initPolaroidScratch: function (canvas, hint) {
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false;
+        let isFinished = false;
+
+        const container = canvas.parentElement;
+        if (!container) return;
+
+        const init = () => {
+            const rect = container.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+
+            // Silver scratch coating
+            ctx.fillStyle = '#C0C0C0';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Subtle texture/grain
+            ctx.fillStyle = 'rgba(0,0,0,0.15)';
+            for (let i = 0; i < 500; i++) {
+                ctx.fillRect(Math.random() * canvas.width, Math.random() * canvas.height, 1, 1);
+            }
+
+            ctx.globalCompositeOperation = 'destination-out';
+        };
+
+        const getPos = (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return {
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            };
+        };
+
+        const scratch = (e) => {
+            if (!isDrawing || isFinished) return;
+            const pos = getPos(e);
+
+            ctx.beginPath();
+            ctx.arc(pos.x, pos.y, 25, 0, Math.PI * 2);
+            ctx.fill();
+
+            checkReveal();
+        };
+
+        const checkReveal = () => {
+            if (isFinished) return;
+            // Sampling for performance
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const pixels = imageData.data;
+            let transparent = 0;
+
+            for (let i = 0; i < pixels.length; i += 80) { // Sparse check
+                if (pixels[i + 3] < 128) transparent++;
+            }
+
+            const revealed = (transparent / (pixels.length / 80)) * 100;
+
+            if (revealed > 65) {
+                isFinished = true;
+                canvas.style.opacity = '0';
+                canvas.style.pointerEvents = 'none';
+                if (hint) {
+                    hint.classList.remove('opacity-0');
+                    hint.classList.add('animate-fade-in');
+                }
+                this.playSfx('https://assets.mixkit.co/active_storage/sfx/2555/2555-preview.mp3', 0.2); // Beep
+                if ('vibrate' in navigator) navigator.vibrate(30);
+            }
+        };
+
+        canvas.addEventListener('mousedown', () => isDrawing = true);
+        canvas.addEventListener('touchstart', (e) => {
+            isDrawing = true;
+            if (e.cancelable) e.preventDefault();
+        }, { passive: false });
+
+        window.addEventListener('mouseup', () => isDrawing = false);
+        window.addEventListener('touchend', () => isDrawing = false);
+
+        canvas.addEventListener('mousemove', scratch);
+        canvas.addEventListener('touchmove', (e) => {
+            if (e.cancelable) e.preventDefault();
+            scratch(e);
+        }, { passive: false });
+
+        init();
+        window.addEventListener('resize', init);
     },
 
     playSuccessSound: function () {
