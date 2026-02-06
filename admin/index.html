@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Birthday Admin Wizard</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css?v=1.0.1">
+
+    <!-- Leaflet Maps CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- EXIF.js for reading photo metadata (GPS location, date) -->
+    <script src="https://cdn.jsdelivr.net/npm/exif-js@2.3.0/exif.min.js"></script>
+
+    <!-- QRCode.js for generating shareable links -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+    <script src="../data.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        emerald: { 50: '#f0fdf4', 100: '#dcfce7', 200: '#bbf7d0', 500: '#22c55e', 600: '#16a34a', 700: '#15803d', 900: '#14532d' },
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body>
+    <!-- Main Wizard Container -->
+    <div class="wizard-container">
+        <!-- Header with Progress -->
+        <header class="wizard-header">
+            <!-- Left: Brand -->
+            <div class="flex items-center gap-4">
+                <button onclick="app.openSidebarMobile()"
+                    class="md:hidden p-1.5 text-gray-400 hover:bg-gray-100 rounded-lg">
+                    <span class="material-symbols-outlined">menu</span>
+                </button>
+                <div class="brand-logo">
+                    <span class="material-symbols-outlined">cake</span>
+                </div>
+                <div class="hidden sm:block">
+                    <h1 class="text-sm font-black text-gray-900 leading-none">Birthday Admin</h1>
+                    <span class="text-[9px] text-gray-400 font-bold uppercase tracking-widest mt-1 block">Setup
+                        Wizard</span>
+                </div>
+            </div>
+
+            <!-- Center: Progress & Title (Desktop) -->
+            <div class="hidden md:flex flex-col items-center gap-1.5 flex-1 max-w-xs xl:max-w-md mx-6">
+                <div class="flex items-center gap-3 w-full">
+                    <span id="progressText"
+                        class="text-[9px] font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap">Step 0 of
+                        0</span>
+                    <div class="progress-container flex-1">
+                        <div class="progress-bar" id="progressBar"></div>
+                    </div>
+                </div>
+                <div id="stepTitle" class="text-[10px] font-extrabold text-emerald-600 uppercase tracking-widest">Setup
+                </div>
+            </div>
+
+            <!-- Right: Actions -->
+            <div class="flex items-center gap-2">
+                <button onclick="app.togglePreview()"
+                    class="p-2 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"
+                    id="togglePreviewBtn" title="Toggle Layout">
+                    <span class="material-symbols-outlined text-xl">side_navigation</span>
+                </button>
+                <button onclick="app.showPreview()"
+                    class="px-4 py-2 bg-gray-900 hover:bg-black text-white rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all shadow-lg active:scale-95">
+                    Live Preview
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Workspace -->
+        <div class="wizard-main" id="wizardMain">
+            <!-- Left: Sidebar Navigation -->
+            <aside class="wizard-sidebar" id="wizardSidebar">
+                <div class="sidebar-header">
+                    <button onclick="app.toggleSidebar()" class="sidebar-toggle-btn" title="Toggle Sidebar">
+                        <span class="material-symbols-outlined text-lg">menu_open</span>
+                    </button>
+                    <button onclick="app.closeSidebarMobile()" class="md:hidden p-2 text-gray-400">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+                <nav class="sidebar-nav" id="sidebarNav">
+                    <!-- Steps will be injected here -->
+                </nav>
+            </aside>
+            <div id="sidebarOverlay" class="fixed inset-0 bg-black/50 z-[40] hidden md:hidden"
+                onclick="app.closeSidebarMobile()"></div>
+
+            <!-- Center: Editor Area -->
+            <div class="wizard-content">
+                <div id="stepContent" class="step-content">
+                    <!-- Dynamic step content injected here -->
+                </div>
+            </div>
+
+            <!-- Right: Live Preview (Sticky) -->
+            <div class="wizard-preview">
+                <div class="preview-frame">
+                    <div class="preview-notch"></div>
+                    <iframe id="previewIframe" src="../index.html?preview=side" class="preview-iframe"
+                        sandbox="allow-scripts allow-same-origin allow-autoplay" allow="autoplay"></iframe>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer Navigation -->
+        <footer class="wizard-footer">
+            <button id="btnBack" onclick="app.prevStep()" class="nav-btn nav-btn-secondary" disabled>
+                <span class="material-symbols-outlined text-sm">arrow_back</span>
+                <span>Back</span>
+            </button>
+
+            <div class="flex items-center gap-6">
+                <div id="saveStatus"
+                    class="hidden md:flex items-center gap-2 text-gray-300 opacity-0 transition-opacity">
+                    <span class="material-symbols-outlined text-sm">sync</span>
+                    <span id="saveStatusText" class="text-[9px] font-bold uppercase tracking-widest">Saved</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button onclick="app.saveProgress()" class="nav-btn nav-btn-secondary p-2.5" title="Save Progress">
+                        <span class="material-symbols-outlined text-sm">save</span>
+                    </button>
+                    <button id="btnNext" onclick="app.nextStep()" class="nav-btn nav-btn-primary px-6">
+                        <span>Next</span>
+                        <span class="material-symbols-outlined text-sm">arrow_forward</span>
+                    </button>
+                    <button id="btnFinish" onclick="app.finishWizard()"
+                        class="nav-btn nav-btn-primary hidden px-6 bg-indigo-600 hover:bg-indigo-700">
+                        <span class="material-symbols-outlined text-sm">auto_awesome</span>
+                        <span>Finish & Publish</span>
+                    </button>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Preview Modal (Mobile) -->
+    <div id="previewModal"
+        class="preview-modal hidden fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-sm h-[80vh] rounded-3xl overflow-hidden relative flex flex-col">
+            <div class="px-6 py-4 border-b flex justify-between items-center">
+                <h3 class="font-bold text-gray-900">Mobile Preview</h3>
+                <button onclick="app.closePreview()" class="p-2 hover:bg-gray-100 rounded-full">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <iframe id="previewModalIframe" src="" class="flex-1 w-full border-none"
+                sandbox="allow-scripts allow-same-origin allow-autoplay" allow="autoplay"></iframe>
+        </div>
+    </div>
+
+    <!-- Welcome Modal -->
+    <div id="welcomeModal"
+        class="hidden fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-6">
+        <div class="bg-white max-w-md w-full rounded-[2.5rem] p-10 shadow-2xl relative overflow-hidden text-center">
+            <div
+                class="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <span class="material-symbols-outlined text-3xl">auto_fix_high</span>
+            </div>
+            <h2 class="text-3xl font-black text-gray-900 mb-2">Ready to Build?</h2>
+            <p class="text-gray-500 text-sm mb-8 leading-relaxed">Let's create something unforgettable. Follow the steps
+                to design your personalized birthday experience.</p>
+
+            <button onclick="app.closeWelcome()"
+                class="w-full py-4 bg-gray-900 text-white rounded-2xl font-bold hover:bg-black transition-all shadow-xl active:scale-95">
+                Start My Story
+            </button>
+        </div>
+    </div>
+
+    <!-- Map Picker Modal -->
+    <div id="mapPickerModal"
+        class="fixed inset-0 z-[400] bg-black/60 backdrop-blur-sm hidden flex items-center justify-center sm:p-4">
+        <div
+            class="bg-white w-full sm:max-w-4xl h-full sm:h-auto sm:max-h-[90vh] sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+            <div class="p-4 border-b flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined text-blue-600">location_on</span>
+                    <h3 class="font-bold text-gray-900">Pick Location</h3>
+                </div>
+                <button onclick="mapPicker.close()" class="p-1.5 hover:bg-gray-100 rounded-full">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <div class="p-4 bg-gray-50 border-b flex flex-col gap-3">
+                <div class="flex gap-2">
+                    <input type="text" id="mapSearchInput" class="flex-1 px-4 py-2 border rounded-xl text-sm"
+                        placeholder="Search a place...">
+                    <button onclick="mapPicker.search(true)"
+                        class="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-bold">Search</button>
+                </div>
+                <div id="mapSearchResults" class="hidden bg-white border rounded-xl shadow-lg max-h-40 overflow-y-auto">
+                </div>
+            </div>
+            <div class="flex-1 relative min-h-[300px]">
+                <div id="leafletPickerContainer" class="absolute inset-0"></div>
+            </div>
+            <div class="p-4 border-t flex justify-between items-center gap-4 bg-white">
+                <p id="selectedLocationText" class="text-xs text-gray-400 italic truncate">Click on map...</p>
+                <button onclick="mapPicker.confirm()" id="confirmLocationBtn" disabled
+                    class="bg-emerald-600 text-white px-6 py-2 rounded-xl text-sm font-bold disabled:opacity-50">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page Type Picker Modal -->
+    <div id="pagePickerModal" class="fixed inset-0 z-[300] bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-4xl max-h-[90vh] rounded-3xl shadow-2xl overflow-hidden flex flex-col">
+            <div class="p-6 border-b flex items-center justify-between bg-gradient-to-r from-emerald-50 to-white">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center">
+                        <span class="material-symbols-outlined">add_circle</span>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-gray-900">Add New Page</h3>
+                        <p class="text-xs text-gray-400">Choose a page type to add to your journey</p>
+                    </div>
+                </div>
+                <button onclick="app.closePagePicker()" class="p-2 hover:bg-gray-100 rounded-xl transition-colors">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <div class="page-picker-grid p-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 overflow-y-auto">
+                <!-- Content injected by renderers.renderPageTypePicker() -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Icon Picker Modal -->
+    <div id="iconPickerModal" class="fixed inset-0 z-[350] bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-2xl max-h-[80vh] rounded-3xl shadow-2xl overflow-hidden flex flex-col">
+            <div class="p-4 border-b flex items-center justify-between bg-gray-50">
+                <h3 class="font-bold text-gray-900">Select Icon</h3>
+                <button onclick="app.closeIconPicker()" class="p-2 hover:bg-gray-200 rounded-lg">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <div class="p-4 bg-gray-50 border-b">
+                <div class="relative">
+                    <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">search</span>
+                    <input type="text" id="iconSearchInput" class="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm" 
+                        placeholder="Filter icons..." oninput="app.filterIcons(this.value)">
+                </div>
+            </div>
+            <div id="iconPickerContent" class="p-6 grid grid-cols-6 sm:grid-cols-8 gap-3 overflow-y-auto">
+                <!-- Icons injected by renderers.renderIconPicker() -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div id="notification"
+        class="fixed top-8 left-1/2 -translate-x-1/2 z-[500] px-6 py-3 bg-gray-900 text-white rounded-2xl shadow-2xl flex items-center gap-3 opacity-0 pointer-events-none transition-all duration-300">
+        <span class="material-symbols-outlined text-emerald-400" id="notificationIcon">check_circle</span>
+        <span class="text-sm font-bold" id="notificationText">Saved!</span>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/state.js"></script>
+    <script src="js/translations.js"></script>
+    <script src="js/renderers.js"></script>
+    <script src="js/map-picker.js"></script>
+    <script src="js/app.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.app && typeof window.app.init === 'function') {
+                app.init();
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Memory Box | A Personal Journey</title>
+
+    <!-- Premium SEO & Social Meta Tags -->
+    <meta name="description" content="A curated digital journey of memories, adventures, and love. Happy Birthday!">
+    <meta name="theme-color" content="#b33939">
+
+    <!-- Open Graph / Social Media -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="A Gift from the Heart">
+    <meta property="og:description" content="I've tucked away some memories for you. Open the box.">
+    <meta property="og:image" content="assets/og-preview.png"> <!-- User can add this asset later -->
+
+    <!-- Mobile App Polish -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <!-- Dependencies -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Shadows+Into+Light&family=Caveat:wght@400;700&family=Inter:wght@300;400;600&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&family=La+Belle+Aurore&family=Nanum+Pen+Script&family=Coming+Soon&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <script id="tailwind-config">
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        "tissue-pink": "#fce7e7",
+                        "receipt-offwhite": "#f4f1ea",
+                        "ink-black": "#2d2926",
+                        "printer-case": "#e5e1d8",
+                        "ribbon-red": "#b33939",
+                        "vintage-ink": "#2d2926",
+                        "paper-white": "#fcfaf5",
+                        "cardboard": "#c2a382",
+                        "cardboard-dark": "#a68768"
+                    },
+                    fontFamily: {
+                        "mono": ["Courier Prime", "monospace"],
+                        "serif": ["Playfair Display", "serif"],
+                        "body": ["Crimson Pro", "serif"],
+                        "handwritten": ["Shadows Into Light", "cursive"],
+                        "marker": ["Caveat", "cursive"],
+                        "inter": ["Inter", "sans-serif"],
+                        "la-belle": ["La Belle Aurore", "cursive"],
+                    },
+                    animation: {
+                        'print-slow': 'printOut 4s cubic-bezier(0.4, 0, 0.2, 1) forwards',
+                        'led-pulse': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        printOut: {
+                            '0%': { transform: 'translateY(-100%) rotate(1deg)', opacity: '0' },
+                            '10%': { opacity: '1' },
+                            '100%': { transform: 'translateY(0) rotate(1deg)', opacity: '1' },
+                        }
+                    }
+                },
+            },
+        }
+    </script>
+
+    <link rel="stylesheet" href="style.css">
+
+</head>
+
+<body class="min-h-screen text-vintage-ink font-body selection:bg-ribbon-red/20 overflow-x-hidden">
+    <!-- Premium Preloader -->
+    <div id="preloader" class="fixed inset-0 z-[9999] flex items-center justify-center bg-[#fdfaf1]">
+        <div class="relative flex flex-col items-center">
+            <!-- Pulsing Wax Seal Logo -->
+            <div
+                class="w-24 h-24 bg-ribbon-red rounded-full shadow-2xl animate-pulse flex items-center justify-center border-4 border-white/20">
+                <span class="material-symbols-outlined text-white/50 text-5xl">history_edu</span>
+            </div>
+            <div class="mt-8 overflow-hidden w-48 h-[2px] bg-black/5 rounded-full">
+                <div id="preloader-bar" class="h-full bg-ribbon-red w-0 transition-all duration-500 ease-out"></div>
+            </div>
+            <p class="mt-4 font-serif italic text-vintage-ink/40 text-sm tracking-widest animate-pulse">Unlocking
+                Memories...</p>
+        </div>
+    </div>
+
+    <!-- Visual Overlays -->
+    <div class="fixed inset-0 pointer-events-none z-0">
+        <div id="dynamic-bg" class="absolute inset-0 bg-transparent"></div>
+    </div>
+
+    <!-- App Container -->
+    <div id="app-container" class="relative z-10 min-h-screen">
+        <div id="page-content">
+            <!-- Dynamic Content Injected Here -->
+        </div>
+    </div>
+
+    <!-- Scripts -->
+
+
+    <!-- SVG Filters for Effects -->
+    <svg style="position: absolute; width: 0; height: 0;" xmlns="http://www.w3.org/2000/svg" version="1.1">
+        <defs>
+            <filter id="gooey">
+                <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur" />
+                <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 19 -9"
+                    result="goo" />
+                <feComposite in="SourceGraphic" in2="goo" operator="atop" />
+            </filter>
+        </defs>
+    </svg>
+
+    <!-- Standalone Preview Support (New Tab) -->
+    <script>
+            (function () {
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.has('preview')) {
+                    console.log('[Preview] Preview mode detected');
+
+                    // Try to get data from opener or parent first
+                    let sourceConfig = null;
+                    try {
+                        if (window.opener && window.opener.state && typeof window.opener.state.getConfig === 'function') {
+                            sourceConfig = window.opener.state.getConfig();
+                            console.log('[Preview] Loaded config from opener window');
+                        } else if (window.parent && window.parent !== window && window.parent.state && typeof window.parent.state.getConfig === 'function') {
+                            sourceConfig = window.parent.state.getConfig();
+                            console.log('[Preview] Loaded config from parent window (iframe)');
+                        }
+                    } catch (e) {
+                        console.warn('[Preview] Could not access opener/parent window (CORS/Security)');
+                    }
+
+                    // Fallback to localStorage
+                    if (!sourceConfig) {
+                        const lsData = localStorage.getItem('birthday_engine_config');
+                        if (lsData) {
+                            try {
+                                const parsed = JSON.parse(lsData);
+                                const config = parsed.config || parsed;
+                                const pages = parsed.pages || config.pages || [];
+                                sourceConfig = { ...config, pages };
+                                console.log('[Preview] Loaded config from localStorage');
+                            } catch (e) {
+                                console.error('[Preview] Failed to parse localStorage');
+                            }
+                        }
+                    }
+
+                    if (sourceConfig) {
+                        window.CONFIG = sourceConfig;
+                        // If app is already loaded, trigger live update
+                        if (window.app && typeof window.app.liveUpdate === 'function') {
+                            window.app.liveUpdate(sourceConfig);
+                        }
+                    }
+                }
+            })();
+    </script>
+
+    <!-- Published Site Config Loader -->
+    <script>
+        (function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            const siteId = urlParams.get('to');
+            
+            if (siteId) {
+                console.log('[Published] Loading config for site:', siteId);
+                
+                // Mark as published site for loader styling
+                document.documentElement.setAttribute('data-published-site', 'true');
+                
+                // Show loading state on preloader
+                const originalPreloaderText = document.querySelector('#preloader p');
+                if (originalPreloaderText) {
+                    originalPreloaderText.textContent = 'Loading Your Memory Box...';
+                }
+                
+                // Fetch config from Cloudflare Worker
+                fetch('https://valentine-upload.aldoramadhan16.workers.dev/get-config?id=' + encodeURIComponent(siteId))
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Config not found: ' + response.status);
+                        }
+                        return response.json();
+                    })
+                    .then(config => {
+                        console.log('[Published] Config loaded successfully');
+                        window.CONFIG = config;
+                        
+                        // Update preloader text
+                        if (originalPreloaderText) {
+                            originalPreloaderText.textContent = 'Unlocking Memories...';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('[Published] Failed to load config:', error);
+                        
+                        // Show error on preloader
+                        const preloader = document.getElementById('preloader');
+                        if (preloader) {
+                            preloader.innerHTML = `
+                                <div class="relative flex flex-col items-center">
+                                    <div class="w-24 h-24 bg-gray-400 rounded-full shadow-2xl flex items-center justify-center border-4 border-white/20">
+                                        <span class="material-symbols-outlined text-white/50 text-5xl">error</span>
+                                    </div>
+                                    <p class="mt-4 font-serif italic text-vintage-ink/60 text-sm tracking-widest">Memory Box Not Found</p>
+                                    <p class="mt-2 text-xs text-gray-400">The link may have expired or is invalid.</p>
+                                </div>
+                            `;
+                        }
+                        
+                        // Allow fallback to default data.js after 3 seconds
+                        setTimeout(() => {
+                            window.CONFIG = null; // Will trigger data.js fallback
+                        }, 3000);
+                    });
+            }
+        })();
+    </script>
+
+    <script src="data.js"></script>
+    <script src="script.js"></script>
+
+    <!-- Admin Preview Support - Listen for config updates -->
+    <script>
+        (function () {
+            console.log('[Preview] Admin preview support loaded');
+
+            // Listen for config updates from admin preview
+            window.addEventListener('message', function (e) {
+                console.log('[Preview] Received message:', e.data);
+
+                if (e.data && e.data.type === 'REINIT_CONFIG') {
+                    console.log('[Preview] Received config update from admin, targetPage:', e.data.targetPageIndex);
+
+                    // Update the global CONFIG
+                    if (e.data.config) {
+                        console.log('[Preview] Current CONFIG pages:', window.CONFIG?.pages?.length);
+                        window.CONFIG = e.data.config;
+                        console.log('[Preview] New CONFIG pages:', window.CONFIG.pages.length);
+                        console.log('[Preview] First page data:', window.CONFIG.pages[0]);
+
+                        // Trigger re-render using app.liveUpdate
+                        if (window.app && typeof window.app.liveUpdate === 'function') {
+                            console.log('[Preview] Calling liveUpdate...');
+                            window.app.liveUpdate(e.data.config);
+
+                            // Navigate to target page if specified
+                            if (typeof e.data.targetPageIndex === 'number' && e.data.targetPageIndex >= 0) {
+                                const targetIdx = e.data.targetPageIndex;
+                                console.log('[Preview] Will navigate to page', targetIdx);
+                                setTimeout(() => {
+                                    console.log('[Preview] Executing goToPage(', targetIdx, ')');
+                                    if (window.app && typeof window.app.goToPage === 'function') {
+                                        window.app.goToPage(targetIdx);
+                                        console.log('[Preview] goToPage executed successfully');
+                                    } else {
+                                        console.log('[Preview] app.goToPage not available!');
+                                    }
+                                }, 200);
+                            } else {
+                                console.log('[Preview] No valid targetPageIndex specified:', e.data.targetPageIndex);
+                            }
+                        } else {
+                            console.log('[Preview] app.liveUpdate not available yet');
+                        }
+                    }
+                }
+            });
+
+            // Notify admin that preview is ready
+            function notifyReady() {
+                if (window.parent !== window) {
+                    console.log('[Preview] Notifying admin: PREVIEW_READY');
+                    window.parent.postMessage({ type: 'PREVIEW_READY' }, '*');
+                }
+            }
+
+            notifyReady();
+            setTimeout(notifyReady, 500);
+            setTimeout(notifyReady, 1500);
+        })();
+    </script>
+</body>
+
+</html>
