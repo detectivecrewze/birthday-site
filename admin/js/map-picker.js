@@ -118,8 +118,9 @@ const mapPicker = {
 
             // If coordinates already exist, move to them
             const coordsInput = document.getElementById(`map-coords-${pageIndex}-${fieldKey}-${itemIdx}`);
-            if (coordsInput && coordsInput.value.includes(',')) {
-                const [lat, lng] = coordsInput.value.split(',').map(v => parseFloat(v.trim()));
+            const coordsText = coordsInput ? (coordsInput.value || coordsInput.textContent || '') : '';
+            if (coordsText.includes(',')) {
+                const [lat, lng] = coordsText.split(',').map(v => parseFloat(v.trim()));
                 if (!isNaN(lat) && !isNaN(lng)) {
                     this.setMarker({ lat, lng });
                     this.map.setView([lat, lng], 15);
@@ -164,10 +165,32 @@ const mapPicker = {
     setMarker(latlng) {
         this.selectedLatLng = latlng;
 
+        // Surgical Precision Pin Definition
+        const redPinIcon = L.divIcon({
+            className: 'map-pin-div-icon',
+            html: `
+                <div class="map-pin-wrapper">
+                    <svg class="map-pin-svg" viewBox="0 0 40 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M20 52C20 52 40 38.2 40 20C40 8.9543 31.0457 0 20 0C8.9543 0 0 8.9543 0 20C0 38.2 20 52 20 52Z" fill="#EF4444"/>
+                        <circle cx="20" cy="20" r="10" fill="white"/>
+                        <circle cx="20" cy="20" r="4" fill="#EF4444"/>
+                    </svg>
+                </div>
+            `,
+            iconSize: [40, 52],
+            iconAnchor: [20, 52],
+            popupAnchor: [0, -52]
+        });
+
         if (this.marker) {
+            this.marker.setIcon(redPinIcon);
             this.marker.setLatLng(latlng);
         } else {
-            this.marker = L.marker(latlng, { draggable: true }).addTo(this.map);
+            this.marker = L.marker(latlng, {
+                icon: redPinIcon,
+                draggable: true
+            }).addTo(this.map);
+
             this.marker.on('dragend', () => {
                 this.selectedLatLng = this.marker.getLatLng();
                 this.updateUI();
@@ -226,9 +249,9 @@ const mapPicker = {
         }
 
         try {
-            // Use Photon API - much faster than Nominatim
+            // Use Photon API - biased to Indonesia
             const response = await fetch(
-                `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=10&lang=en`,
+                `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=10&lat=-6.2&lon=106.8&lang=en`,
                 { headers: { 'Accept': 'application/json' } }
             );
             const data = await response.json();
@@ -285,12 +308,14 @@ const mapPicker = {
         if (!container) return;
 
         container.innerHTML = results.map((res) => `
-            <div class="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0 flex items-start gap-3 transition-colors"
+            <div class="px-4 py-3 hover:bg-indigo-50 cursor-pointer border-b border-gray-100 last:border-0 flex items-start gap-3 transition-colors group"
                 onclick='mapPicker.selectPhotonResult(${JSON.stringify(res).replace(/'/g, "&#39;")})'>
-                <span class="material-symbols-outlined text-gray-400 text-lg mt-0.5">location_on</span>
-                <div>
-                    <div class="text-sm font-bold text-gray-900">${this.formatPhotonTitle(res)}</div>
-                    <div class="text-[11px] text-gray-500 line-clamp-1">${this.formatPhotonSubtitle(res)}</div>
+                <div class="p-2 bg-gray-100 rounded-lg group-hover:bg-indigo-200 transition-colors">
+                    <span class="material-symbols-outlined text-gray-400 group-hover:text-indigo-600 text-lg">location_on</span>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="text-sm font-bold text-gray-900 truncate">${this.formatPhotonTitle(res)}</div>
+                    <div class="text-[11px] text-gray-500 truncate mt-0.5">${this.formatPhotonSubtitle(res)}</div>
                 </div>
             </div>
         `).join('');
@@ -310,11 +335,13 @@ const mapPicker = {
     formatPhotonSubtitle(res) {
         const props = res.properties || {};
         const parts = [];
-        if (props.street) parts.push(props.street);
+
+        // Add City and Country specifically as requested
         if (props.city) parts.push(props.city);
-        if (props.state) parts.push(props.state);
+        if (props.state && props.state !== props.city) parts.push(props.state);
         if (props.country) parts.push(props.country);
-        return parts.join(', ') || '';
+
+        return parts.join(', ') || 'No detailed address available';
     },
 
     selectPhotonResult(res) {
@@ -495,13 +522,13 @@ const mapPicker = {
         if (!searchTab || !pasteTab || !searchContent || !pasteContent) return;
 
         if (tab === 'search') {
-            searchTab.className = 'flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all bg-white border-2 border-indigo-500 text-indigo-600 shadow-sm';
-            pasteTab.className = 'flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all bg-white border border-gray-200 text-gray-500 hover:border-gray-300';
+            searchTab.className = 'flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all bg-white text-indigo-600 shadow-sm border border-slate-200';
+            pasteTab.className = 'flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all text-slate-500 hover:text-slate-700';
             searchContent.classList.remove('hidden');
             pasteContent.classList.add('hidden');
         } else {
-            pasteTab.className = 'flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all bg-white border-2 border-emerald-500 text-emerald-600 shadow-sm';
-            searchTab.className = 'flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all bg-white border border-gray-200 text-gray-500 hover:border-gray-300';
+            pasteTab.className = 'flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all bg-white text-emerald-600 shadow-sm border border-slate-200';
+            searchTab.className = 'flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all text-slate-500 hover:text-slate-700';
             pasteContent.classList.remove('hidden');
             searchContent.classList.add('hidden');
             this.attachGmapsHandler();

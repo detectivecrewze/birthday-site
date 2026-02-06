@@ -121,6 +121,16 @@ const PAGE_TYPES = {
             { key: 'finishMessage', label: 'Message when reveal is 90%', type: 'text' },
             { key: 'buttonText', label: 'Next Page Button', type: 'text' }
         ]
+    },
+    'finish': {
+        icon: 'check_circle',
+        name: 'Finish Page',
+        description: 'Final page with recipient name and sharing options',
+        fields: [
+            { key: 'title', label: 'Page Title', type: 'text' },
+            { key: 'subtitle', label: 'Subtitle', type: 'text' },
+            { key: 'recipientName', label: 'Default Recipient Name (optional)', type: 'text' }
+        ]
     }
 };
 
@@ -186,6 +196,11 @@ const DEFAULT_PAGE_FIELDS = {
         title: "A Message For You",
         content: "Write your message here...",
         buttonText: "Continue"
+    },
+    'finish': {
+        title: "Your Memory Box is Ready",
+        subtitle: "Personalize your gift before sharing",
+        recipientName: ""
     }
 };
 

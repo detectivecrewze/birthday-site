@@ -644,15 +644,10 @@ const app = {
 
         try {
             const config = state.getConfig();
-            const recipientName = (config.metadata?.customerName || '').trim();
-            if (!recipientName) {
-                utils.showNotification('Please enter a Customer Name in Setup step first!', 'error');
-                btn.innerHTML = originalHTML;
-                btn.disabled = false;
-                return;
-            }
-
-            const id = recipientName.toLowerCase().replace(/\s+/g, '-');
+            // Generate a unique ID based on timestamp + random string
+            const timestamp = Date.now().toString(36);
+            const randomStr = Math.random().toString(36).substring(2, 8);
+            const id = `${timestamp}-${randomStr}`;
             const siteUrl = `https://birthday-site-wine-sigma.vercel.app/?to=${id}`;
 
             const response = await fetch('https://valentine-upload.aldoramadhan16.workers.dev/save-config?id=' + encodeURIComponent(id), {

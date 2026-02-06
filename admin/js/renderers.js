@@ -118,22 +118,6 @@ const renderers = {
                     </p>
                 </div>
 
-                <!-- Identity Section -->
-                <div class="field-group-card !bg-white">
-                    <div class="field-group-title">
-                        <span class="material-symbols-outlined text-sm">badge</span>
-                        Identity & Personalization
-                    </div>
-                    <div>
-                        <label class="premium-label">Recipient Name (Customer)</label>
-                        <input type="text" class="premium-input-field" 
-                            placeholder="e.g. Sarah Miller" 
-                            value="${state.configData.metadata?.customerName || ''}"
-                            oninput="state.updateField('metadata', 'customerName', this.value)">
-                        <p class="text-[10px] text-gray-400 mt-2 italic">This will be used for your unique shareable link.</p>
-                    </div>
-                </div>
-
                 <!-- Theme Colors -->
                 <div class="field-group-card !bg-white">
                     <div class="field-group-title">
@@ -797,6 +781,9 @@ const renderers = {
     },
 
     renderFinishStep() {
+        const config = state.getConfig();
+        const recipientName = config.metadata?.customerName || '';
+        
         return `
             <div class="section-header mb-8">
                 <div class="section-icon bg-green-100 text-green-600">
@@ -805,6 +792,46 @@ const renderers = {
                 <div class="flex-1">
                     <h2 class="text-2xl font-bold text-gray-900">Finish & Share</h2>
                     <p class="text-sm text-gray-500 mt-1">Review your work and export the final configuration</p>
+                </div>
+            </div>
+
+            <!-- Recipient Name Card -->
+            <div class="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm mb-8">
+                <div class="flex items-start gap-4 mb-6">
+                    <div class="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center shrink-0">
+                        <span class="material-symbols-outlined">person</span>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="font-bold text-gray-900 text-lg mb-1">Who is this for?</h3>
+                        <p class="text-sm text-gray-500">Enter the recipient's name to personalize the website URL</p>
+                    </div>
+                </div>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Recipient Name</label>
+                        <input type="text" id="finish-recipient-name" 
+                            class="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-xl font-medium text-gray-900 placeholder-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all"
+                            placeholder="e.g., Septian"
+                            value="${recipientName}"
+                            oninput="state.updateField('metadata', 'customerName', this.value)">
+                    </div>
+                    
+                    <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 flex gap-3">
+                        <div class="text-amber-600 mt-0.5">
+                            <span class="material-symbols-outlined text-xl">info</span>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-700 leading-relaxed">
+                                <span class="font-semibold">This name will be used for:</span>
+                            </p>
+                            <ul class="text-sm text-gray-600 mt-2 space-y-1 ml-4 list-disc">
+                                <li>The website URL parameter (e.g., <span class="font-mono text-xs bg-white px-1.5 py-0.5 rounded border border-amber-200">?for=Name</span>)</li>
+                                <li>Personalizing messages throughout the site</li>
+                                <li>Making the experience uniquely theirs</li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
             </div>
 

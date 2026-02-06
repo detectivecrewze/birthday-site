@@ -726,8 +726,10 @@ window.app = {
                 this.renderTimeCapsuleStitch(pageData, container);
                 break;
 
+            case 'finish':
             default:
-                container.innerHTML = `<div class="flex items-center justify-center min-h-screen"><h1>Finish</h1></div>`;
+                this.renderFinishPage(pageData || {}, container);
+                break;
         }
     },
 
@@ -2176,17 +2178,29 @@ window.app = {
             await this.delay(1400);
 
             // PHASE 2: Create and animate marker appearing
+            // PHASE 2: Create and animate marker appearing
+            // Pixel-perfect pin: tip at exact lat/lng, water-drop shape with white circle + red center
             const markerIcon = L.divIcon({
                 className: 'custom-leaflet-pin journey-marker',
                 html: `
-                    <div class="pin-group relative cursor-pointer" id="marker-${i}" style="transform: translate(-10px, -30px) scale(0); opacity: 0; transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);">
+                    <div class="pin-group pin-precision-wrapper" id="marker-${i}">
                         <div class="pin-hover-effect">
-                            <span class="material-symbols-outlined text-ribbon-red text-4xl drop-shadow-md">location_on</span>
-                            <div class="absolute inset-x-0 bottom-1 w-2 h-1 bg-black/40 blur-sm rounded-full mx-auto"></div>
-                            <div class="absolute inset-0 bg-ribbon-red rounded-full opacity-30 animate-ping -z-10"></div>
+                            <!-- Classic red water-drop pin with white circle and red center dot -->
+                            <svg class="pin-svg" viewBox="0 0 36 48" xmlns="http://www.w3.org/2000/svg">
+                                <!-- Water-drop shape -->
+                                <path class="pin-body" d="M18 0C8.059 0 0 8.059 0 18c0 13.5 18 30 18 30s18-16.5 18-30C36 8.059 27.941 0 18 0z" fill="#b33939"/>
+                                <!-- White circle in middle -->
+                                <circle class="pin-white-circle" cx="18" cy="16" r="7" fill="white"/>
+                                <!-- Small red dot in center -->
+                                <circle class="pin-red-dot" cx="18" cy="16" r="3" fill="#b33939"/>
+                            </svg>
+                            <!-- Shadow below pin -->
+                            <div class="pin-shadow"></div>
+                            <!-- Pulse animation ring -->
+                            <div class="pin-pulse-ring"></div>
                         </div>
                         
-                        <div id="popover-${i}" class="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 md:mb-6 w-[180px] md:w-52 opacity-0 scale-75 pointer-events-none transition-all duration-500 ease-out z-[1000]">
+                        <div id="popover-${i}" class="pin-popover">
                             <div class="polaroid-frame !p-2 md:!p-2.5 !pb-8 md:!pb-10 shadow-[0_15px_30px_rgba(0,0,0,0.3)] md:shadow-[0_25px_50px_rgba(0,0,0,0.35)] border-2 border-stone-200/50 bg-white origin-bottom">
                                 <div class="absolute -top-3 left-1/2 -translate-x-1/2 w-12 md:w-14 h-4 md:h-5 bg-yellow-100/60 backdrop-blur-sm border-x border-black/5 z-20"></div>
                                 <div class="bg-stone-100 overflow-hidden aspect-square rounded-sm relative w-full">
@@ -2200,28 +2214,73 @@ window.app = {
                         </div>
                     </div>
                 `,
-                iconSize: [40, 40],
-                iconAnchor: [20, 40]
+                iconSize: [36, 48],
+                iconAnchor: [18, 48]
             });
 
             let marker;
             try {
-                marker = L.marker(coords, { icon: markerIcon }).addTo(map);
+                // Make marker draggable for map picker functionality
+                marker = L.marker(coords, { 
+                    icon: markerIcon,
+                    draggable: true,  // Enable dragging
+                    autoPan: true     // Auto-pan map when dragging near edges
+                }).addTo(map);
+                
                 this.mapJourneyState.markers.push(marker);
+                
                 // Add click handler
                 marker.on('click', () => this.handleMarkerClick(i, pin));
+                
+                // Handle drag events - update pin data when dropped
+                marker.on('dragend', (event) => {
+                    const newPos = event.target.getLatLng();
+                    console.log(`[Marker ${i}] Dropped at:`, newPos.lat, newPos.lng);
+                    
+                    // Update the pin's coordinates in your data
+                    if (this.mapJourneyState.pins[i]) {
+                        this.mapJourneyState.pins[i].coords = [newPos.lat, newPos.lng];
+                    }
+                    
+                    // Optional: Show confirmation animation
+                    const markerEl = document.getElementById(`marker-${i}`);
+                    if (markerEl) {
+                        markerEl.classList.add('pin-locked');
+                        setTimeout(() => markerEl.classList.remove('pin-locked'), 300);
+                    }
+                    
+                    // Optional: Callback for external handling
+                    if (typeof this.onPinMoved === 'function') {
+                        this.onPinMoved(i, newPos.lat, newPos.lng);
+                    }
+                });
+                
+                // Visual feedback during drag
+                marker.on('dragstart', () => {
+                    const markerEl = document.getElementById(`marker-${i}`);
+                    if (markerEl) {
+                        markerEl.classList.add('pin-dragging');
+                    }
+                });
+                
+                marker.on('drag', () => {
+                    // Optional: Real-time coordinate display
+                    const pos = marker.getLatLng();
+                    console.log(`[Marker ${i}] Dragging:`, pos.lat.toFixed(6), pos.lng.toFixed(6));
+                });
+                
             } catch (e) {
                 console.error('[Journey] Error creating marker for pin', i, e);
                 continue;
             }
 
             // Animate marker appearing with bounce
+            // Uses CSS classes for transforms - NO inline transforms that would fight Leaflet positioning
             const markerEl = document.getElementById(`marker-${i}`);
             if (markerEl) {
-                markerEl.style.transform = 'translate(-10px, -30px) scale(1.3)';
-                markerEl.style.opacity = '1';
+                markerEl.classList.add('pin-drop-in');
                 await this.delay(100);
-                markerEl.style.transform = 'translate(-10px, -30px) scale(1)';
+                markerEl.classList.add('pin-settled');
             }
 
             // Play dramatic sound
@@ -2305,14 +2364,14 @@ window.app = {
             return;
         }
 
+        const markerEl = document.getElementById(`marker-${index}`);
         const popover = document.getElementById(`popover-${index}`);
         const map = this.mapJourneyState.map;
-        const isVisible = popover && popover.classList.contains('opacity-100');
+        const isVisible = markerEl && markerEl.classList.contains('popover-active');
 
-        // Close all others
-        document.querySelectorAll('[id^="popover-"]').forEach(p => {
-            p.classList.add('opacity-0', 'scale-75', 'pointer-events-none');
-            p.classList.remove('opacity-100', 'scale-100');
+        // Close all others - remove active class from all markers
+        document.querySelectorAll('.pin-precision-wrapper').forEach(m => {
+            m.classList.remove('popover-active');
         });
 
         if (!isVisible) {
@@ -2324,9 +2383,9 @@ window.app = {
                 console.error('[MarkerClick] Error in flyTo:', e);
             }
 
-            if (popover) {
-                popover.classList.remove('opacity-0', 'scale-75', 'pointer-events-none');
-                popover.classList.add('opacity-100', 'scale-100');
+            // Activate this marker's popover
+            if (markerEl) {
+                markerEl.classList.add('popover-active');
             }
             this.playSfx('https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3', 0.2);
         } else {
@@ -2665,126 +2724,448 @@ window.app = {
         if ('vibrate' in navigator) navigator.vibrate(30);
     },
 
-
-
-    renderTimeCapsuleStitch: function (data, container) {
-        // Hardcoded defaults for removed fields
-        const title = data.title || "The Time Capsule";
-        const subtitle = data.subtitle || "Seal your thoughts for the future";
-        const placeholder = data.placeholder || "Write a message to your future self...";
-        const buttonText = data.buttonText || "Seal Capsule";
+    renderFinishPage: function (data, container) {
+        const title = data.title || "Your Memory Box is Ready";
+        const subtitle = data.subtitle || "Personalize your gift before sharing";
+        const recipientName = data.recipientName || "";
 
         container.innerHTML = `
+            <!-- Background - Matching other pages -->
             <div class="fixed inset-0 inside-box-container z-0">
                 <div class="silk-tissue opacity-50"></div>
                 <div class="absolute inset-0 bg-radial-gradient from-white/10 to-transparent pointer-events-none"></div>
             </div>
-            
-            <div class="min-h-screen relative z-10 pt-20 pb-12 md:py-12 px-4">
-                <input id="tc-seal-toggle" type="checkbox" class="hidden"/>
-                
-                <div class="tc-content max-w-6xl w-full flex flex-col items-center gap-8 relative z-10 mx-auto">
-                    <div class="text-center space-y-2 mb-8 md:mb-4 animate-fade-in-down">
-                        <h1 class="font-serif text-4xl md:text-5xl italic tracking-tight text-ink-black">${title}</h1>
-                        <p class="font-body text-base md:text-lg opacity-60 max-w-md mx-auto">${subtitle}</p>
+
+            <!-- Main Container -->
+            <div class="min-h-screen relative z-10 flex flex-col items-center justify-center px-4 py-12">
+                <!-- Header -->
+                <header class="text-center mb-12 animate-fade-in-down">
+                    <!-- Ornamental divider above -->
+                    <div class="flex items-center justify-center gap-4 mb-6">
+                        <div class="w-16 h-px bg-gradient-to-r from-transparent via-ink-black/20 to-transparent"></div>
+                        <div class="w-2 h-2 border border-ribbon-red/40 rotate-45"></div>
+                        <div class="w-16 h-px bg-gradient-to-r from-transparent via-ink-black/20 to-transparent"></div>
+                    </div>
+                    
+                    <div class="w-16 h-16 mx-auto mb-4 text-ribbon-red/80 relative">
+                        <div class="absolute inset-0 border border-ribbon-red/20 rounded-full"></div>
+                        <div class="absolute inset-[-8px] border border-dashed border-ribbon-red/10 rounded-full"></div>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="w-full h-full p-3">
+                            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                        </svg>
+                    </div>
+                    
+                    <h1 class="font-serif text-4xl md:text-5xl italic text-ink-black mb-3">${title}</h1>
+                    
+                    <div class="flex items-center justify-center gap-2 mb-4">
+                        <div class="w-1.5 h-1.5 rounded-full bg-ribbon-red/30"></div>
+                        <div class="w-2 h-2 rounded-full bg-ribbon-red/50"></div>
+                        <div class="w-1.5 h-1.5 rounded-full bg-ribbon-red/30"></div>
+                    </div>
+                    
+                    <p class="font-body text-ink-black/50 text-sm tracking-wide uppercase">${subtitle}</p>
+                </header>
+
+                <!-- Recipient Name Card -->
+                <div class="w-full max-w-md bg-white/60 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-8 mb-8 animate-scale-in" style="animation-delay: 0.3s">
+                    <div class="text-center mb-6">
+                        <div class="w-12 h-12 mx-auto mb-4 bg-ribbon-red/10 rounded-full flex items-center justify-center">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="w-6 h-6 text-ribbon-red">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                <circle cx="12" cy="7" r="4"/>
+                            </svg>
+                        </div>
+                        <h2 class="font-serif text-2xl italic text-ink-black mb-2">Who is this for?</h2>
+                        <p class="font-body text-sm text-ink-black/50">Enter the recipient's name to personalize the experience</p>
                     </div>
 
-                    <div id="tc-box-target" class="tc-memory-box animate-scale-in" style="animation-delay: 0.5s">
-                        <div class="tc-box-flap tc-flap-left"></div>
-                        <div class="tc-box-flap tc-flap-right"></div>
-                        <div class="tc-box-tape"></div>
-                    </div>
-
-                    <!-- Draggable Envelope -->
-                    <div id="tc-drag-envelope" class="tc-envelope-container" style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(5deg); z-index: 100;">
-                        <div class="tc-envelope cursor-pointer" onclick="app.openLetterPopup()">
-                            <div class="tc-envelope-flap"></div>
-                            <div class="relative z-0 p-12 text-center w-full">
-                                <p class="font-handwriting text-xl text-ink-black/40 italic">Click to write...</p>
-                                <div class="w-full h-[1px] bg-gray-200 mt-4 mb-3"></div>
-                                <div class="w-3/4 h-[1px] bg-gray-100 mx-auto"></div>
-                            </div>
-                            <!-- Wax Seal Area (Hidden until inside box) -->
-                            <div id="tc-seal-area" class="tc-wax-seal-area absolute top-[55%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[70px] h-[70px] z-10 opacity-0 pointer-events-none" onclick="event.stopPropagation()">
-                                <div class="tc-liquid-wax-container">
-                                    <div id="tc-wax-drop" class="tc-wax-drop"></div>
-                                </div>
-                                <div id="tc-wax-blob-static" class="tc-wax-blob opacity-0"></div>
-                                <div id="tc-stamped-seal-final" class="tc-stamped-seal">
-                                    <span class="tc-monogram">${data.inisial}</span>
-                                </div>
+                    <div class="space-y-4">
+                        <div class="relative">
+                            <input 
+                                type="text" 
+                                id="finish-recipient-name" 
+                                value="${recipientName}"
+                                placeholder="e.g., Septian"
+                                class="w-full px-5 py-4 bg-white/80 border border-ink-black/10 rounded-xl font-body text-lg text-ink-black placeholder:text-ink-black/20 focus:outline-none focus:border-ribbon-red/40 focus:ring-2 focus:ring-ribbon-red/10 transition-all"
+                            />
+                            <div class="absolute right-4 top-1/2 -translate-y-1/2 text-ink-black/20">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="w-5 h-5">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                </svg>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Physical Letter (Shown after writing) -->
-                    <div id="tc-physical-letter" class="tc-letter-physical">
-                        <div class="font-serif text-xs uppercase tracking-widest opacity-30 mb-8">${new Date().toLocaleDateString()}</div>
-                        <div id="tc-letter-content-preview" class="font-handwriting text-xl leading-relaxed text-ink-black/70"></div>
-                        <div class="tc-letter-line"></div>
-                        <div class="tc-letter-line"></div>
-                        <div class="tc-letter-line"></div>
-                    </div>
-
-                    <div id="tc-ritual-controls" class="flex flex-col items-center animate-fade-in" style="opacity: 0; pointer-events: none;">
-                        <button id="tc-seal-btn" onclick="app.executeInstantStamp()" class="group relative flex flex-col items-center gap-3 transition-transform hover:scale-110 active:scale-95">
-                            <div class="w-16 h-16 bg-ribbon-red rounded-full shadow-lg flex items-center justify-center border-2 border-white/20">
-                                <span class="material-symbols-outlined text-white/80">auto_fix_high</span>
+                        <!-- Info Box -->
+                        <div class="bg-amber-50/50 border border-amber-200/50 rounded-lg p-4 flex gap-3">
+                            <div class="text-amber-600/60 mt-0.5">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <path d="M12 16v-4M12 8h.01"/>
+                                </svg>
                             </div>
-                            <p class="font-serif text-[10px] uppercase tracking-[0.2em] text-ribbon-red font-bold">Seal the Vault</p>
-                        </button>
-                    </div>
-
-                    <div class="tc-finish-btn-container mt-8 flex flex-col items-center">
-                        <button id="tc-finish-btn" onclick="app.sealAndFinish()" class="font-serif text-sm uppercase tracking-[0.3em] py-4 px-12 border border-ink-charcoal/20 bg-white/50 hover:bg-ink-charcoal hover:text-white transition-all duration-500 rounded-full backdrop-blur-sm mb-12">
-                            ${data.buttonText}
-                        </button>
-
-                        <!-- Brand Logo at the very end of the journey -->
-                        <div id="tc-brand-signature" class="flex items-center gap-2 text-primary opacity-30 hover:opacity-100 transition-opacity pb-8">
-                            <span class="material-symbols-outlined scale-75" style="font-variation-settings: 'FILL' 1, 'wght' 700;">
-                                diamond
-                            </span>
-                            <h2 class="text-[10px] font-bold uppercase tracking-widest">
-                                FOR YOU, ALWAYS
-                            </h2>
+                            <div>
+                                <p class="font-body text-sm text-ink-black/70 leading-relaxed">
+                                    <span class="font-semibold text-ink-black">This name will be used for:</span><br/>
+                                    • The website URL (e.g., <span class="font-mono text-xs bg-white/50 px-1.5 py-0.5 rounded">?for=Name</span>)<br/>
+                                    • Personalizing messages throughout the site<br/>
+                                    • Making the experience uniquely theirs
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Popup -->
-                <div id="tc-letter-popup" class="tc-letter-popup text-ink-black px-4">
-                    <div class="tc-letter-box">
-                        <span class="tc-letter-close" onclick="app.closeLetterPopup()">CLOSE</span>
-                        
-                        <div class="mb-10 text-center">
-                            <h2 class="font-serif text-3xl italic text-ink-black/80">A Note for Next Year</h2>
-                            <div class="h-1 w-12 bg-ribbon-red/20 mx-auto mt-2"></div>
+                <!-- Action Buttons -->
+                <div class="flex flex-col items-center gap-4 animate-fade-in" style="animation-delay: 0.6s">
+                    <button 
+                        onclick="app.saveRecipientAndFinish()" 
+                        class="group relative px-10 py-4 bg-gradient-to-r from-ribbon-red to-ribbon-red/90 text-white font-serif italic text-lg rounded-full shadow-lg shadow-ribbon-red/25 hover:shadow-xl hover:shadow-ribbon-red/30 hover:-translate-y-0.5 transition-all duration-300"
+                    >
+                        <span class="relative z-10 flex items-center gap-2">
+                            Complete & Share
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5 group-hover:translate-x-1 transition-transform">
+                                <path d="M5 12h14M12 5l7 7-7 7"/>
+                            </svg>
+                        </span>
+                    </button>
+                    
+                    <button 
+                        onclick="app.skipRecipient()" 
+                        class="font-body text-sm text-ink-black/40 hover:text-ink-black/60 transition-colors"
+                    >
+                        Skip for now
+                    </button>
+                </div>
+
+                <!-- Footer brand -->
+                <div class="mt-auto pt-12 flex items-center gap-2 text-ink-black/30 font-mono text-xs uppercase tracking-widest">
+                    <span class="text-[10px]">◆</span>
+                    <span>Sealed with care</span>
+                </div>
+            </div>
+        `;
+    },
+
+    saveRecipientAndFinish: function() {
+        const nameInput = document.getElementById('finish-recipient-name');
+        const recipientName = nameInput ? nameInput.value.trim() : '';
+        
+        if (recipientName) {
+            // Store in CONFIG
+            if (window.CONFIG) {
+                window.CONFIG.recipientName = recipientName;
+                if (!window.CONFIG.metadata) window.CONFIG.metadata = {};
+                window.CONFIG.metadata.customerName = recipientName;
+            }
+            
+            // Update URL parameter - this creates the personalized URL
+            const url = new URL(window.location.href);
+            url.searchParams.set('for', encodeURIComponent(recipientName));
+            window.history.replaceState({}, '', url);
+            
+            // Show completion with the personalized link
+            this.showCompletionScreen(recipientName);
+        } else {
+            this.showCompletionScreen();
+        }
+    },
+
+    skipRecipient: function() {
+        this.showCompletionScreen();
+    },
+
+    showCompletionScreen: function(recipientName) {
+        const container = document.getElementById('page-content');
+        const currentUrl = window.location.href;
+        const shareableUrl = recipientName ? 
+            currentUrl.replace(/[?&]for=/, '?to=').replace(/[?&]for=[^&]*/, '?to=' + encodeURIComponent(recipientName.toLowerCase().replace(/\s+/g, '-'))) : 
+            currentUrl;
+        
+        container.innerHTML = `
+            <div class="fixed inset-0 inside-box-container z-0">
+                <div class="silk-tissue opacity-50"></div>
+            </div>
+            <div class="min-h-screen relative z-10 flex flex-col items-center justify-center px-4 py-12">
+                <div class="text-center animate-scale-in max-w-lg">
+                    <div class="w-20 h-20 mx-auto mb-6 bg-green-500/10 rounded-full flex items-center justify-center">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-10 h-10 text-green-600">
+                            <path d="M20 6L9 17l-5-5"/>
+                        </svg>
+                    </div>
+                    <h1 class="font-serif text-3xl italic text-ink-black mb-4">All Set!</h1>
+                    <p class="font-body text-ink-black/60 mb-8">Your memory box is ready to be shared.</p>
+                    
+                    ${recipientName ? `
+                    <!-- Shareable Link Card -->
+                    <div class="bg-white/70 backdrop-blur-sm rounded-xl border border-white/60 p-6 mb-6 text-left">
+                        <label class="block font-body text-xs uppercase tracking-wider text-ink-black/40 mb-2">Your Personalized Link</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="share-link" value="${shareableUrl}" readonly 
+                                class="flex-1 px-4 py-3 bg-white/80 border border-ink-black/10 rounded-lg font-mono text-xs text-ink-black/70 focus:outline-none">
+                            <button onclick="app.copyShareLink()" class="px-4 py-2 bg-ribbon-red text-white rounded-lg hover:bg-ribbon-red/90 transition-colors">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                </svg>
+                            </button>
                         </div>
-                        
-                        <div class="space-y-8 flex-1 flex flex-col">
-                            <div>
-                                <label class="block text-[10px] font-bold uppercase tracking-[0.2em] text-ink-black/30 mb-2">Recipient Email</label>
-                                <input type="email" id="tc-letter-email" 
-                                    placeholder="their-email@example.com" 
-                                    class="w-full bg-transparent border-b border-black/10 py-3 font-body text-lg focus:outline-none focus:border-ribbon-red/40 text-ink-black placeholder:text-ink-black/10 transition-all" />
+                        <p class="mt-3 font-body text-xs text-ink-black/40">This link includes "${recipientName}" for a personal touch.</p>
+                    </div>
+                    ` : ''}
+                    
+                    <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                        <button onclick="location.reload()" class="px-8 py-3 bg-ink-black text-white font-serif italic rounded-full hover:bg-ink-black/90 transition-colors">
+                            View Experience
+                        </button>
+                        ${recipientName ? `
+                        <button onclick="app.shareLink('${recipientName}')" class="px-8 py-3 bg-ribbon-red/10 text-ribbon-red font-serif italic rounded-full hover:bg-ribbon-red/20 transition-colors">
+                            Share Now
+                        </button>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+
+    copyShareLink: function() {
+        const linkInput = document.getElementById('share-link');
+        if (linkInput) {
+            linkInput.select();
+            navigator.clipboard.writeText(linkInput.value).then(() => {
+                this.showToast('Link copied!');
+            });
+        }
+    },
+
+    shareLink: function(recipientName) {
+        const url = document.getElementById('share-link')?.value || window.location.href;
+        if (navigator.share) {
+            navigator.share({
+                title: `A special memory box for ${recipientName}`,
+                text: `I've created a special memory box just for you, ${recipientName}! 💝`,
+                url: url
+            });
+        } else {
+            this.copyShareLink();
+        }
+    },
+
+    showToast: function(message) {
+        const toast = document.createElement('div');
+        toast.className = 'fixed bottom-8 left-1/2 -translate-x-1/2 bg-ink-black/90 text-white px-6 py-3 rounded-full font-body text-sm z-50 animate-fade-in';
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transition = 'opacity 0.5s';
+            setTimeout(() => toast.remove(), 500);
+        }, 2000);
+    },
+
+
+
+    renderTimeCapsuleStitch: function (data, container) {
+        const title = data.title || "The Time Capsule";
+        const subtitle = data.subtitle || "A message sealed for tomorrow";
+        const placeholder = data.placeholder || "Write something meaningful...";
+        const buttonText = data.buttonText || "Seal & Send";
+        const initial = data.inisial || "♥";
+
+        container.innerHTML = `
+            <!-- Background - Matching other pages -->
+            <div class="fixed inset-0 inside-box-container z-0">
+                <div class="silk-tissue opacity-50"></div>
+                <div class="absolute inset-0 bg-radial-gradient from-white/10 to-transparent pointer-events-none"></div>
+            </div>
+
+            <!-- Main Container -->
+            <div class="tc-container">
+                <!-- Header -->
+                <header class="tc-header">
+                    <!-- Ornamental divider above -->
+                    <div class="tc-header-ornament">
+                        <div class="tc-ornament-line"></div>
+                        <div class="tc-ornament-diamond"></div>
+                        <div class="tc-ornament-line"></div>
+                    </div>
+                    
+                    <div class="tc-header-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                        </svg>
+                    </div>
+                    
+                    <h1 class="tc-title">${title}</h1>
+                    
+                    <!-- Decorative dots under title -->
+                    <div class="tc-title-dots">
+                        <div class="tc-title-dot"></div>
+                        <div class="tc-title-dot"></div>
+                        <div class="tc-title-dot"></div>
+                    </div>
+                    
+                    <p class="tc-subtitle">${subtitle}</p>
+                </header>
+
+                <!-- Stage Area -->
+                <div class="tc-stage">
+                    <!-- Memory Box -->
+                    <div id="tc-box-target" class="tc-box">
+                        <div class="tc-box-inner">
+                            <div class="tc-box-flap tc-flap-left"></div>
+                            <div class="tc-box-flap tc-flap-right"></div>
+                            <div class="tc-box-opening"></div>
+                            <div class="tc-box-shadow"></div>
+                        </div>
+                        <div class="tc-box-tape"></div>
+                        <div class="tc-box-label">
+                            <span class="tc-box-year">${new Date().getFullYear()}</span>
+                            <span class="tc-box-divider">→</span>
+                            <span class="tc-box-future">${new Date().getFullYear() + 1}</span>
+                        </div>
+                    </div>
+
+                    <!-- Envelope -->
+                    <div id="tc-drag-envelope" class="tc-envelope-wrap">
+                        <div class="tc-envelope" onclick="app.openLetterPopup()">
+                            <div class="tc-envelope-paper">
+                                <div class="tc-envelope-lines">
+                                    <div class="tc-line"></div>
+                                    <div class="tc-line tc-line-short"></div>
+                                </div>
+                                <p class="tc-envelope-hint">
+                                    <span class="tc-hint-icon">✎</span>
+                                    Click to compose
+                                </p>
+                            </div>
+                            <div class="tc-envelope-flap">
+                                <div class="tc-flap-triangle"></div>
+                            </div>
+                            <div class="tc-envelope-body">
+                                <div class="tc-envelope-fold tc-fold-left"></div>
+                                <div class="tc-envelope-fold tc-fold-right"></div>
+                                <div class="tc-envelope-fold tc-fold-bottom"></div>
                             </div>
                             
-                            <div class="flex-1 flex flex-col">
-                                <label class="block text-[10px] font-bold uppercase tracking-[0.2em] text-ink-black/30 mb-2">Your Message</label>
-                                <textarea id="tc-letter-text" 
-                                    class="w-full flex-1 bg-transparent border-none py-2 font-marker text-3xl leading-[1.6] resize-none focus:outline-none text-ink-black/80 placeholder:text-ink-black/10" 
-                                    style="background-image: linear-gradient(transparent 39px, rgba(0,0,0,0.03) 39px); background-size: 100% 40px;"
-                                    placeholder="${placeholder}"></textarea>
-                            </div>
-
-                            <div class="py-6 text-center mt-auto">
-                                <button onclick="app.finishWritingLetter()" class="group relative px-10 py-3">
-                                    <span class="relative z-10 font-serif text-xs uppercase tracking-[0.4em] text-ink-black/60 group-hover:text-ink-black transition-all">Done</span>
-                                    <div class="absolute inset-0 border border-black/5 rounded-full scale-100 group-hover:scale-105 group-hover:bg-black/5 transition-all duration-300"></div>
-                                </button>
+                            <!-- Wax Seal Area -->
+                            <div id="tc-seal-area" class="tc-seal-area">
+                                <div class="tc-liquid-wax-container">
+                                    <div id="tc-wax-drop" class="tc-wax-drop"></div>
+                                </div>
+                                <div id="tc-wax-blob-static" class="tc-wax-blob"></div>
+                                <div id="tc-stamped-seal-final" class="tc-stamped-seal">
+                                    <span class="tc-monogram">${initial}</span>
+                                </div>
                             </div>
                         </div>
+                        <div class="tc-envelope-shadow"></div>
+                    </div>
+
+                    <!-- Physical Letter -->
+                    <div id="tc-physical-letter" class="tc-letter">
+                        <div class="tc-letter-header">
+                            <span class="tc-letter-date">${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+                            <div class="tc-letter-stamp-placeholder"></div>
+                        </div>
+                        <div class="tc-letter-content">
+                            <div id="tc-letter-content-preview" class="tc-letter-text"></div>
+                            <div class="tc-letter-lines">
+                                <div class="tc-l-line"></div>
+                                <div class="tc-l-line"></div>
+                                <div class="tc-l-line"></div>
+                            </div>
+                        </div>
+                        <div class="tc-letter-signature">
+                            <div class="tc-sig-line"></div>
+                            <span>With love</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Controls -->
+                <div class="tc-controls">
+                    <!-- Seal Button (appears after envelope in box) -->
+                    <div id="tc-ritual-controls" class="tc-seal-control">
+                        <button id="tc-seal-btn" onclick="app.executeInstantStamp()" class="tc-seal-btn">
+                            <div class="tc-seal-btn-glow"></div>
+                            <div class="tc-seal-btn-inner">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <path d="M12 6v6l4 2"/>
+                                </svg>
+                                <span>Apply Seal</span>
+                            </div>
+                        </button>
+                        <p class="tc-seal-hint">Press to seal your message</p>
+                    </div>
+
+                    <!-- Finish Button (appears after seal) -->
+                    <div class="tc-finish-wrap">
+                        <button id="tc-finish-btn" onclick="app.sealAndFinish()" class="tc-finish-btn">
+                            <span class="tc-finish-text">${buttonText}</span>
+                            <div class="tc-finish-shine"></div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <footer class="tc-footer">
+                    <div class="tc-brand">
+                        <span class="tc-brand-icon">◆</span>
+                        <span class="tc-brand-text">Sealed with care</span>
+                    </div>
+                </footer>
+            </div>
+
+            <!-- Letter Writing Modal -->
+            <div id="tc-letter-popup" class="tc-modal">
+                <div class="tc-modal-backdrop" onclick="app.closeLetterPopup()"></div>
+                <div class="tc-modal-content">
+                    <button class="tc-modal-close" onclick="app.closeLetterPopup()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 6L6 18M6 6l12 12"/>
+                        </svg>
+                    </button>
+                    
+                    <div class="tc-modal-header">
+                        <div class="tc-modal-icon">✉</div>
+                        <h2 class="tc-modal-title">Write to the Future</h2>
+                        <p class="tc-modal-subtitle">Your words will be sealed until next year</p>
+                    </div>
+
+                    <div class="tc-modal-body">
+                        <div class="tc-field">
+                            <label class="tc-field-label">
+                                <span class="tc-label-icon">@</span>
+                                Recipient Email
+                            </label>
+                            <input type="email" id="tc-letter-email" 
+                                placeholder="hello@example.com" 
+                                class="tc-input" />
+                        </div>
+                        
+                        <div class="tc-field tc-field-grow">
+                            <label class="tc-field-label">
+                                <span class="tc-label-icon">✎</span>
+                                Your Message
+                            </label>
+                            <textarea id="tc-letter-text" 
+                                class="tc-textarea" 
+                                placeholder="${placeholder}"
+                                rows="6"></textarea>
+                            <div class="tc-textarea-glow"></div>
+                        </div>
+                    </div>
+
+                    <div class="tc-modal-footer">
+                        <button onclick="app.finishWritingLetter()" class="tc-done-btn">
+                            <span>Done Writing</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M5 12h14M12 5l7 7-7 7"/>
+                            </svg>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -2800,7 +3181,6 @@ window.app = {
         const box = document.getElementById('tc-box-target');
         const envelope = document.getElementById('tc-drag-envelope');
         const letter = document.getElementById('tc-physical-letter');
-        const stamp = document.getElementById('tc-stamp-tool');
         const ritualControls = document.getElementById('tc-ritual-controls');
 
         let letterInEnvelope = false;
@@ -2810,40 +3190,33 @@ window.app = {
             if (letterInEnvelope) return;
             letterInEnvelope = true;
 
-            letter.style.transition = "all 0.8s cubic-bezier(0.4, 0, 0.2, 1)";
-            const envRect = envelope.getBoundingClientRect();
-            const parentRect = letter.parentElement.getBoundingClientRect();
-
-            letter.style.left = (envRect.left - parentRect.left + envRect.width / 2) + 'px';
-            letter.style.top = (envRect.top - parentRect.top + envRect.height / 2) + 'px';
+            // Animate letter into envelope
+            letter.style.transition = "all 0.6s cubic-bezier(0.4, 0, 0.2, 1)";
             letter.style.opacity = "0";
-            letter.style.transform = "translate(-50%, -50%) scale(0.5) rotate(10deg)";
+            letter.style.transform = "translate(-50%, -50%) scale(0.6) rotate(5deg)";
 
             this.playSfx('https://assets.mixkit.co/active_storage/sfx/2560/2560-preview.mp3', 0.2);
 
             setTimeout(() => {
                 letter.style.display = 'none';
                 envelope.querySelector('.tc-envelope').classList.add('has-letter');
-                envelope.style.cursor = 'pointer';
 
-                // Automatically place envelope in box after a short delay
+                // Automatically place envelope in box
                 setTimeout(() => {
                     placeEnvelopeInBox();
-                }, 300);
-            }, 800);
+                }, 200);
+            }, 600);
         };
 
         const placeEnvelopeInBox = () => {
             if (!letterInEnvelope || envelopeInBox) return;
             envelopeInBox = true;
 
-            envelope.style.transition = "all 1s cubic-bezier(0.4, 0, 0.2, 1)";
-            const boxRect = box.getBoundingClientRect();
-            const parentRect = envelope.parentElement.getBoundingClientRect();
-
-            envelope.style.left = (boxRect.left - parentRect.left + boxRect.width / 2) + 'px';
-            envelope.style.top = (boxRect.top - parentRect.top + boxRect.height / 2) + 'px';
-            envelope.style.transform = 'translate(-50%, -50%) rotate(-1.5deg)';
+            // Animate envelope moving into the box
+            envelope.style.transition = "all 0.8s cubic-bezier(0.4, 0, 0.2, 1)";
+            envelope.style.transform = 'translate(-50%, 30%) rotate(0deg) scale(0.85)';
+            envelope.style.opacity = '0.4';
+            envelope.style.pointerEvents = 'none';
 
             box.classList.add('is-hovered');
             this.playSfx('https://assets.mixkit.co/active_storage/sfx/265/265-preview.mp3', 0.3);
@@ -2851,57 +3224,81 @@ window.app = {
             setTimeout(() => {
                 box.classList.remove('is-hovered');
 
+                // Show seal controls (envelope stays visible in box)
                 setTimeout(() => {
-                    document.getElementById('tc-seal-area').style.opacity = '1';
-                    document.getElementById('tc-seal-area').style.pointerEvents = 'auto';
+                    const sealArea = document.getElementById('tc-seal-area');
+                    if (sealArea) {
+                        sealArea.style.opacity = '1';
+                        sealArea.style.pointerEvents = 'auto';
+                    }
 
-                    // Show the Red Seal Button instead of the stamp
-                    const ritualControls = document.getElementById('tc-ritual-controls');
-                    ritualControls.style.opacity = '1';
-                    ritualControls.style.pointerEvents = 'auto';
-                }, 500);
-            }, 1000);
+                    if (ritualControls) {
+                        ritualControls.style.opacity = '1';
+                        ritualControls.style.pointerEvents = 'auto';
+                    }
+                }, 300);
+            }, 800);
         };
 
-        letter.addEventListener('click', placeLetterInEnvelope);
-        envelope.addEventListener('click', () => {
-            if (!letterInEnvelope) {
-                this.openLetterPopup();
-            }
-        });
+        if (letter) {
+            letter.addEventListener('click', placeLetterInEnvelope);
+        }
+
+        if (envelope) {
+            envelope.addEventListener('click', () => {
+                if (!letterInEnvelope) {
+                    this.openLetterPopup();
+                }
+            });
+        }
     },
 
     executeInstantStamp: function () {
         const ritualControls = document.getElementById('tc-ritual-controls');
         const waxDrop = document.getElementById('tc-wax-drop');
+        const waxBlob = document.getElementById('tc-wax-blob-static');
         const finalSeal = document.getElementById('tc-stamped-seal-final');
-        const finishBtn = document.querySelector('.tc-finish-btn-container');
+        const finishWrap = document.querySelector('.tc-finish-wrap');
 
-        // 1. Play Sizzle & Impact Sound
+        // Play sounds
         this.playSfx('https://assets.mixkit.co/active_storage/sfx/2561/2561-preview.mp3', 0.2);
 
-        // 2. Animate the Seal appearing
+        // Animate wax drop
         if (waxDrop) {
             waxDrop.style.opacity = '1';
-            waxDrop.style.width = '85px';
-            waxDrop.style.height = '85px';
+            waxDrop.style.width = '60px';
+            waxDrop.style.height = '60px';
+        }
+
+        // Show wax blob
+        if (waxBlob) {
+            waxBlob.style.opacity = '1';
+            waxBlob.style.transform = 'scale(1)';
         }
 
         setTimeout(() => {
             this.playSfx('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3', 0.8);
+            
             if (waxDrop) waxDrop.style.opacity = '0';
+            if (waxBlob) waxBlob.style.opacity = '0';
+            
             if (finalSeal) {
                 finalSeal.style.opacity = '1';
                 finalSeal.style.transform = 'scale(1)';
+                finalSeal.style.transition = 'all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
             }
 
-            // 3. Reveal Final Button
-            ritualControls.style.opacity = '0';
-            ritualControls.style.pointerEvents = 'none';
+            // Hide seal button, show finish button
+            if (ritualControls) {
+                ritualControls.style.opacity = '0';
+                ritualControls.style.pointerEvents = 'none';
+            }
 
-            finishBtn.style.opacity = '1';
-            finishBtn.style.pointerEvents = 'auto';
-            finishBtn.style.transform = 'translateY(0)';
+            if (finishWrap) {
+                finishWrap.style.opacity = '1';
+                finishWrap.style.pointerEvents = 'auto';
+                finishWrap.style.transform = 'translateY(0)';
+            }
         }, 500);
     },
 
@@ -2936,43 +3333,70 @@ window.app = {
     },
 
     finishWritingLetter: function () {
-        const text = document.getElementById('tc-letter-text').value;
+        const textEl = document.getElementById('tc-letter-text');
+        const text = textEl ? textEl.value : '';
         if (!text.trim()) return;
 
         const preview = document.getElementById('tc-letter-content-preview');
-        preview.innerText = text;
+        if (preview) preview.innerText = text;
 
         const physical = document.getElementById('tc-physical-letter');
-        physical.classList.add('active');
-        physical.style.display = 'block';
-        physical.style.opacity = '1';
+        if (physical) {
+            physical.classList.add('active');
+            physical.style.display = 'block';
+        }
 
         this.closeLetterPopup();
 
-        // Hide instructional text on envelope
-        const envLabel = document.querySelector('#tc-drag-envelope .font-handwriting');
-        if (envLabel) envLabel.style.opacity = '0.1';
+        // Dim the hint on envelope
+        const envHint = document.querySelector('.tc-envelope-hint');
+        if (envHint) envHint.style.opacity = '0.1';
 
-        // Automatically place letter in envelope after a short delay
+        // Auto place letter after delay
         setTimeout(() => {
-            physical.click();
+            if (physical) {
+                physical.click();
+            }
         }, 300);
     },
 
     initWaxRitual: function () {
         const waxDrop = document.getElementById('tc-wax-drop');
+        const waxBlob = document.getElementById('tc-wax-blob-static');
         const finalSeal = document.getElementById('tc-stamped-seal-final');
-        const finishBtn = document.querySelector('.tc-finish-btn-container');
+        const finishWrap = document.querySelector('.tc-finish-wrap') || document.querySelector('.tc-finish-btn-container');
+        const ritualControls = document.getElementById('tc-ritual-controls');
+        const sealArea = document.getElementById('tc-seal-area');
 
-        // Initial hidden state for ritual
-        finishBtn.style.opacity = '0';
-        finishBtn.style.pointerEvents = 'none';
+        // Initial hidden states
+        if (finishWrap) {
+            finishWrap.style.opacity = '0';
+            finishWrap.style.pointerEvents = 'none';
+            finishWrap.style.transform = 'translateY(10px)';
+        }
+        
+        if (ritualControls) {
+            ritualControls.style.opacity = '0';
+            ritualControls.style.pointerEvents = 'none';
+        }
+
+        if (sealArea) {
+            sealArea.style.opacity = '0';
+            sealArea.style.pointerEvents = 'none';
+        }
+        
         if (finalSeal) {
             finalSeal.style.opacity = '0';
             finalSeal.style.transform = 'scale(0.8)';
         }
+        
+        if (waxBlob) {
+            waxBlob.style.opacity = '0';
+            waxBlob.style.transform = 'scale(0)';
+        }
+        
         if (waxDrop) {
-            waxDrop.style.opacity = '1';
+            waxDrop.style.opacity = '0';
             waxDrop.style.width = '0';
             waxDrop.style.height = '0';
         }
@@ -2980,99 +3404,109 @@ window.app = {
 
     openLetterPopup: function () {
         const popup = document.getElementById('tc-letter-popup');
-        popup.classList.add('active');
+        if (popup) popup.classList.add('active');
         this.playSfx('https://assets.mixkit.co/active_storage/sfx/2560/2560-preview.mp3', 0.2);
     },
 
     closeLetterPopup: function () {
         const popup = document.getElementById('tc-letter-popup');
-        popup.classList.remove('active');
+        if (popup) popup.classList.remove('active');
         this.playSfx('https://assets.mixkit.co/active_storage/sfx/2560/2560-preview.mp3', 0.1);
     },
 
     sealAndFinish: async function () {
-        const email = document.getElementById('tc-letter-email').value;
-        const message = document.getElementById('tc-letter-text').value;
+        const email = document.getElementById('tc-letter-email');
+        const message = document.getElementById('tc-letter-text');
         const btn = document.getElementById('tc-finish-btn');
-        const box = document.querySelector('.tc-memory-box');
+        const box = document.getElementById('tc-box-target');
         const ritualControls = document.getElementById('tc-ritual-controls');
-        const letter = document.getElementById('tc-physical-letter');
         const envelope = document.getElementById('tc-drag-envelope');
+        const sealArea = document.getElementById('tc-seal-area');
 
-        if (!email || !message) {
+        const emailValue = email ? email.value : '';
+        const messageValue = message ? message.value : '';
+
+        if (!emailValue || !messageValue) {
             alert("Please fill in both the email and the message before sealing.");
             return;
         }
 
-        // 1. Sending Animation/State
-        btn.innerHTML = "<span class='animate-pulse'>Sealing into Vault...</span>";
-        btn.style.pointerEvents = 'none';
+        // Sending state
+        if (btn) {
+            btn.innerHTML = "<span class='animate-pulse'>Sealing...</span>";
+            btn.style.pointerEvents = 'none';
+            btn.style.opacity = '0.7';
+        }
 
-        // 2. The Google Sheet Connection (Async)
-        // REPLACE THE URL BELOW with your own Google Web App URL once you deploy it
+        // Google Sheet Connection
         const GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbzFNeClRwfrHxDNqgzjoqEC-J0u2W4DPj1rjEai-wgRGDTEn43fsWa7lC0Dztmv-gxK-Q/exec";
 
         try {
             if (GOOGLE_SHEETS_URL !== "YOUR_GOOGLE_SCRIPT_URL_HERE") {
                 await fetch(GOOGLE_SHEETS_URL, {
                     method: 'POST',
-                    mode: 'no-cors', // Essential for Google Apps Script
+                    mode: 'no-cors',
                     cache: 'no-cache',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: email, message: message })
+                    body: JSON.stringify({ email: emailValue, message: messageValue })
                 });
             }
 
-            // Proceed with the visual ritual after sending
             this.playSfx('https://assets.mixkit.co/active_storage/sfx/2560/2560-preview.mp3', 0.5);
 
-            // Hide letter and envelope
-            if (letter) {
-                letter.style.transition = 'all 0.8s ease';
-                letter.style.opacity = '0';
-                letter.style.transform = 'translate(-50%, -50%) scale(0.5)';
-                setTimeout(() => letter.style.display = 'none', 800);
+            // Hide ritual controls and seal area
+            if (ritualControls) {
+                ritualControls.style.opacity = '0';
+                ritualControls.style.pointerEvents = 'none';
             }
 
+            if (sealArea) {
+                sealArea.style.opacity = '0';
+                sealArea.style.pointerEvents = 'none';
+            }
+
+            // Hide envelope completely as box closes (move behind box)
             if (envelope) {
-                envelope.style.transition = 'all 0.8s ease';
+                envelope.style.transition = 'all 0.5s ease';
                 envelope.style.opacity = '0';
-                envelope.style.transform = 'translate(-50%, -50%) scale(0.5)';
-                setTimeout(() => envelope.style.display = 'none', 800);
+                envelope.style.transform = 'translate(-50%, 50%) scale(0.6)';
+                envelope.style.zIndex = '5'; // Behind the box
             }
 
-            // 3. Fold Flaps (Sequential) - Using Authentic Cardboard Sound
+            // Close box flaps
             setTimeout(() => {
-                box.classList.add('is-closed-left');
-                // Authentic cardboard box closing sound (Mixkit 2549)
-                this.playSfx('https://assets.mixkit.co/active_storage/sfx/2549/2549-preview.mp3', 0.8);
-            }, 500);
+                if (box) {
+                    box.classList.add('is-closed-left');
+                    this.playSfx('https://assets.mixkit.co/active_storage/sfx/2549/2549-preview.mp3', 0.8);
+                }
+            }, 600);
 
             setTimeout(() => {
-                box.classList.add('is-closed-right');
-            }, 1000);
+                if (box) box.classList.add('is-closed-right');
+            }, 1100);
 
-            // 4. Tape Ritual
+            // Apply tape
             setTimeout(() => {
-                box.classList.add('is-taped');
-                // Subtle tape sound - Removed to let custom audio shine
-                // this.playSfx('https://assets.mixkit.co/active_storage/sfx/2552/2552-preview.mp3', 0.3);
-            }, 1800);
+                if (box) box.classList.add('is-taped');
+            }, 1900);
 
-            // 5. Final State -> Cinematic Outro
+            // Final state
             setTimeout(() => {
-                btn.innerHTML = "Delivering in 365 Days ✨";
-                btn.style.opacity = '1';
-                // Trigger the cinematic ending after a moment
-                setTimeout(() => {
-                    this.playCinematicOutro();
-                }, 2000);
-            }, 4000);
+                if (btn) {
+                    btn.innerHTML = "Delivered ✨";
+                    btn.style.opacity = '1';
+                    btn.style.pointerEvents = 'none';
+                }
+                setTimeout(() => this.playCinematicOutro(), 1500);
+            }, 3500);
 
         } catch (error) {
             console.error("Vault Error:", error);
-            btn.innerHTML = "Vault Error - Try Again";
-            btn.style.pointerEvents = 'auto';
+            if (btn) {
+                btn.innerHTML = "Try Again";
+                btn.style.pointerEvents = 'auto';
+                btn.style.opacity = '1';
+            }
         }
     },
 
@@ -3205,9 +3639,15 @@ window.app = {
             };
         };
 
+        const stopScratchAudio = () => {
+            scratchAudio.pause();
+            scratchAudio.currentTime = 0;
+            clearTimeout(scratchTimeout);
+        };
+
         const scratch = (e) => {
             if (!isDrawing || isFinished) {
-                scratchAudio.pause();
+                stopScratchAudio();
                 return;
             }
             const pos = getPos(e);
@@ -3221,7 +3661,7 @@ window.app = {
                 scratchAudio.play().catch(err => { });
             }
             clearTimeout(scratchTimeout);
-            scratchTimeout = setTimeout(() => scratchAudio.pause(), 100);
+            scratchTimeout = setTimeout(stopScratchAudio, 150);
 
             checkReveal();
         };
@@ -3241,33 +3681,36 @@ window.app = {
 
             if (revealed > 65) {
                 isFinished = true;
-                scratchAudio.pause();
+                stopScratchAudio();
                 canvas.style.opacity = '0';
                 canvas.style.pointerEvents = 'none';
                 if (hint) {
                     hint.classList.remove('opacity-0');
                     hint.classList.add('animate-fade-in');
                 }
-                setTimeout(() => {
-                    this.playSfx('assets/scratching.mp3', 0.3); // One final click/scratch sound
-                }, 50);
+                // Play a clean "reveal" sound instead of scratching
+                this.playSfx('https://assets.mixkit.co/active_storage/sfx/2044/2044-preview.mp3', 0.3);
                 if ('vibrate' in navigator) navigator.vibrate(30);
             }
         };
 
-        canvas.addEventListener('mousedown', () => isDrawing = true);
+        canvas.addEventListener('mousedown', () => {
+            if (isFinished) return;
+            isDrawing = true;
+        });
         canvas.addEventListener('touchstart', (e) => {
+            if (isFinished) return;
             isDrawing = true;
             if (e.cancelable) e.preventDefault();
         }, { passive: false });
 
         window.addEventListener('mouseup', () => {
             isDrawing = false;
-            scratchAudio.pause();
+            stopScratchAudio();
         });
         window.addEventListener('touchend', () => {
             isDrawing = false;
-            scratchAudio.pause();
+            stopScratchAudio();
         });
 
         canvas.addEventListener('mousemove', scratch);
@@ -3362,9 +3805,15 @@ window.app = {
             };
         };
 
+        const stopScratchAudio = () => {
+            scratchAudio.pause();
+            scratchAudio.currentTime = 0;
+            clearTimeout(scratchTimeout);
+        };
+
         const scratch = (e) => {
             if (!isDrawing || isFinished) {
-                scratchAudio.pause();
+                stopScratchAudio();
                 return;
             }
             const pos = getPos(e);
@@ -3378,7 +3827,7 @@ window.app = {
                 scratchAudio.play().catch(err => { });
             }
             clearTimeout(scratchTimeout);
-            scratchTimeout = setTimeout(() => scratchAudio.pause(), 100);
+            scratchTimeout = setTimeout(stopScratchAudio, 150);
 
             checkReveal();
         };
@@ -3398,25 +3847,30 @@ window.app = {
 
             if (revealedPercent > 70) {
                 isFinished = true;
-                scratchAudio.pause();
+                stopScratchAudio();
                 canvas.style.opacity = '0';
                 canvas.style.transition = 'opacity 1.5s ease-out';
                 footer.classList.remove('opacity-0', 'translate-y-4');
-                setTimeout(() => {
-                    this.playSfx('assets/scratching.mp3', 0.4);
-                }, 50);
+                // Play a clean "reveal" sound instead of scratching
+                this.playSfx('https://assets.mixkit.co/active_storage/sfx/2044/2044-preview.mp3', 0.4);
             }
         };
 
-        canvas.addEventListener('mousedown', () => isDrawing = true);
-        canvas.addEventListener('touchstart', () => isDrawing = true);
+        canvas.addEventListener('mousedown', () => {
+            if (isFinished) return;
+            isDrawing = true;
+        });
+        canvas.addEventListener('touchstart', () => {
+            if (isFinished) return;
+            isDrawing = true;
+        });
         window.addEventListener('mouseup', () => {
             isDrawing = false;
-            scratchAudio.pause();
+            stopScratchAudio();
         });
         window.addEventListener('touchend', () => {
             isDrawing = false;
-            scratchAudio.pause();
+            stopScratchAudio();
         });
         canvas.addEventListener('mousemove', scratch);
         canvas.addEventListener('touchmove', (e) => {
