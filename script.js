@@ -3170,7 +3170,9 @@ window.app = {
         const ctx = canvas.getContext('2d');
         let isDrawing = false;
         let isFinished = false;
-        let lastSoundTime = 0;
+        let scratchAudio = new Audio('assets/scratching.mp3');
+        scratchAudio.volume = 0.15;
+        let scratchTimeout;
 
         const container = canvas.parentElement;
         if (!container) return;
@@ -3204,21 +3206,24 @@ window.app = {
         };
 
         const scratch = (e) => {
-            if (!isDrawing || isFinished) return;
+            if (!isDrawing || isFinished) {
+                scratchAudio.pause();
+                return;
+            }
             const pos = getPos(e);
 
             ctx.beginPath();
             ctx.arc(pos.x, pos.y, 25, 0, Math.PI * 2);
             ctx.fill();
 
-            checkReveal();
-
-            // Play scratching sound
-            const now = Date.now();
-            if (now - lastSoundTime > 150) {
-                this.playSfx('assets/scratching.mp3', 0.15);
-                lastSoundTime = now;
+            // Play scratching sound with control
+            if (scratchAudio.paused) {
+                scratchAudio.play().catch(err => { });
             }
+            clearTimeout(scratchTimeout);
+            scratchTimeout = setTimeout(() => scratchAudio.pause(), 100);
+
+            checkReveal();
         };
 
         const checkReveal = () => {
@@ -3236,13 +3241,16 @@ window.app = {
 
             if (revealed > 65) {
                 isFinished = true;
+                scratchAudio.pause();
                 canvas.style.opacity = '0';
                 canvas.style.pointerEvents = 'none';
                 if (hint) {
                     hint.classList.remove('opacity-0');
                     hint.classList.add('animate-fade-in');
                 }
-                this.playSfx('assets/scratching.mp3', 0.3); // Final scratch sound
+                setTimeout(() => {
+                    this.playSfx('assets/scratching.mp3', 0.3); // One final click/scratch sound
+                }, 50);
                 if ('vibrate' in navigator) navigator.vibrate(30);
             }
         };
@@ -3253,8 +3261,14 @@ window.app = {
             if (e.cancelable) e.preventDefault();
         }, { passive: false });
 
-        window.addEventListener('mouseup', () => isDrawing = false);
-        window.addEventListener('touchend', () => isDrawing = false);
+        window.addEventListener('mouseup', () => {
+            isDrawing = false;
+            scratchAudio.pause();
+        });
+        window.addEventListener('touchend', () => {
+            isDrawing = false;
+            scratchAudio.pause();
+        });
 
         canvas.addEventListener('mousemove', scratch);
         canvas.addEventListener('touchmove', (e) => {
@@ -3316,7 +3330,9 @@ window.app = {
         const ctx = canvas.getContext('2d');
         let isDrawing = false;
         let isFinished = false;
-        let lastSoundTime = 0;
+        let scratchAudio = new Audio('assets/scratching.mp3');
+        scratchAudio.volume = 0.15;
+        let scratchTimeout;
 
         const initCanvas = () => {
             const rect = canvasContainer.getBoundingClientRect();
@@ -3347,21 +3363,24 @@ window.app = {
         };
 
         const scratch = (e) => {
-            if (!isDrawing || isFinished) return;
+            if (!isDrawing || isFinished) {
+                scratchAudio.pause();
+                return;
+            }
             const pos = getPos(e);
 
             ctx.beginPath();
             ctx.arc(pos.x, pos.y, parseInt(data.brushSize) || 40, 0, Math.PI * 2);
             ctx.fill();
 
-            checkReveal();
-
             // Play scratching sound
-            const now = Date.now();
-            if (now - lastSoundTime > 150) {
-                app.playSfx('assets/scratching.mp3', 0.15);
-                lastSoundTime = now;
+            if (scratchAudio.paused) {
+                scratchAudio.play().catch(err => { });
             }
+            clearTimeout(scratchTimeout);
+            scratchTimeout = setTimeout(() => scratchAudio.pause(), 100);
+
+            checkReveal();
         };
 
         const checkReveal = () => {
@@ -3379,17 +3398,26 @@ window.app = {
 
             if (revealedPercent > 70) {
                 isFinished = true;
+                scratchAudio.pause();
                 canvas.style.opacity = '0';
                 canvas.style.transition = 'opacity 1.5s ease-out';
                 footer.classList.remove('opacity-0', 'translate-y-4');
-                this.playSfx('assets/scratching.mp3', 0.4);
+                setTimeout(() => {
+                    this.playSfx('assets/scratching.mp3', 0.4);
+                }, 50);
             }
         };
 
         canvas.addEventListener('mousedown', () => isDrawing = true);
         canvas.addEventListener('touchstart', () => isDrawing = true);
-        window.addEventListener('mouseup', () => isDrawing = false);
-        window.addEventListener('touchend', () => isDrawing = false);
+        window.addEventListener('mouseup', () => {
+            isDrawing = false;
+            scratchAudio.pause();
+        });
+        window.addEventListener('touchend', () => {
+            isDrawing = false;
+            scratchAudio.pause();
+        });
         canvas.addEventListener('mousemove', scratch);
         canvas.addEventListener('touchmove', (e) => {
             e.preventDefault();
