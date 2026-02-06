@@ -807,6 +807,7 @@ window.app = {
                                     <div class="relative flex-1">
                                         <input id="secret-input" 
                                                onkeyup="if(event.key === 'Enter') app.checkSecret()"
+                                               oninput="const err = document.getElementById('secret-error'); if(err) err.classList.add('hidden')"
                                                class="w-full bg-transparent border-0 focus:ring-0 text-vintage-ink font-inter text-lg px-1 placeholder:text-vintage-ink/30 custom-input focus:placeholder-transparent" 
                                                placeholder="${data.placeholder}" 
                                                type="password"/>
@@ -814,6 +815,9 @@ window.app = {
                                     <button onclick="app.checkSecret()" class="group flex items-center justify-center hover:scale-110 transition-transform">
                                         <span class="material-symbols-outlined text-vintage-ink/60 group-hover:text-vintage-ink">arrow_forward</span>
                                     </button>
+                                </div>
+                                <div id="secret-error" class="hidden font-handwritten text-ribbon-red text-sm mt-4 animate-pulse">
+                                    ❌ Wrong answer! Try remembering again...
                                 </div>
                             </div>
                         </div>
@@ -1026,10 +1030,31 @@ window.app = {
             }, 1400);
 
         } else {
-            // Shake effect or feedback
+            // Shake effect and error feedback
             const btn = document.querySelector('.group span');
+            const errorMsg = document.getElementById('secret-error');
+            const input = document.getElementById('secret-input');
+
             btn.classList.add('text-red-600');
-            setTimeout(() => btn.classList.remove('text-red-600'), 500);
+            if (errorMsg) errorMsg.classList.remove('hidden');
+
+            if (input) {
+                // Shake the whole input container area
+                const container = input.closest('.paper-note');
+                if (container) {
+                    container.classList.add('shake-animate');
+                    setTimeout(() => container.classList.remove('shake-animate'), 500);
+                }
+            }
+
+            setTimeout(() => {
+                btn.classList.remove('text-red-600');
+            }, 500);
+
+            // Haptic Feedback for Mobile (vibration pattern for error)
+            if ('vibrate' in navigator) {
+                navigator.vibrate([50, 100, 50]);
+            }
         }
     },
 
