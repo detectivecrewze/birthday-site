@@ -124,22 +124,13 @@ const renderers = {
                         <span class="material-symbols-outlined text-sm">badge</span>
                         Identity & Personalization
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div>
-                            <label class="premium-label">Recipient Name (Customer)</label>
-                            <input type="text" class="premium-input-field" 
-                                placeholder="e.g. Sarah Miller" 
-                                value="${state.configData.metadata?.customerName || ''}"
-                                oninput="state.updateField('metadata', 'customerName', this.value)">
-                            <p class="text-[10px] text-gray-400 mt-2 italic">This will be used for your unique shareable link.</p>
-                        </div>
-                        <div>
-                            <label class="premium-label">Sender Name (Yours)</label>
-                            <input type="text" class="premium-input-field" 
-                                placeholder="e.g. John Doe" 
-                                value="${state.configData.metadata?.senderName || ''}"
-                                oninput="state.updateField('metadata', 'senderName', this.value)">
-                        </div>
+                    <div>
+                        <label class="premium-label">Recipient Name (Customer)</label>
+                        <input type="text" class="premium-input-field" 
+                            placeholder="e.g. Sarah Miller" 
+                            value="${state.configData.metadata?.customerName || ''}"
+                            oninput="state.updateField('metadata', 'customerName', this.value)">
+                        <p class="text-[10px] text-gray-400 mt-2 italic">This will be used for your unique shareable link.</p>
                     </div>
                 </div>
 
