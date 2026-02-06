@@ -915,35 +915,23 @@ const renderers = {
 
     renderPageTypePicker() {
         const modal = document.getElementById('pagePickerModal');
-        const list = modal.querySelector('.grid') || modal.querySelector('.page-picker-grid');
+        // Find the existing grid container in the modal
+        const list = modal.querySelector('.page-picker-grid');
 
-        if (!list) {
-            // If the element doesn't exist, Create it in the modal
-            modal.innerHTML = `
-                <div class="bg-white w-full max-w-4xl p-8 rounded-3xl max-h-[90vh] overflow-y-auto relative shadow-2xl">
-                    <button onclick="app.closePagePicker()" class="absolute top-6 right-6 text-gray-400 hover:text-gray-900">
-                        <span class="material-symbols-outlined text-3xl">close</span>
-                    </button>
-                    <div class="mb-8">
-                        <h2 class="text-3xl font-display font-bold text-gray-900 mb-2">Build Your Story</h2>
-                        <p class="text-gray-500">Pick a page type to add to your birthday journey</p>
-                    </div>
-                    <div class="page-picker-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                        ${Object.keys(PAGE_TYPES).map(type => {
+        if (list) {
+            // Populate the grid with page types
+            list.innerHTML = Object.keys(PAGE_TYPES).map(type => {
                 const info = PAGE_TYPES[type];
                 return `
-                                <button onclick="app.addPage('${type}')" class="group p-6 text-left border-2 border-gray-100 rounded-3xl hover:border-emerald-500 hover:bg-emerald-50 transition-all">
-                                    <div class="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-400 group-hover:bg-emerald-500 group-hover:text-white transition-all mb-4">
-                                        <span class="material-symbols-outlined text-2xl">${info.icon}</span>
-                                    </div>
-                                    <div class="font-bold text-gray-900 mb-1">${info.name}</div>
-                                    <div class="text-xs text-gray-500 leading-relaxed">${info.description}</div>
-                                </button>
-                            `;
-            }).join('')}
-                    </div>
-                </div>
-            `;
+                    <button onclick="app.addPage('${type}')" class="group p-6 text-left border-2 border-gray-100 rounded-3xl hover:border-emerald-500 hover:bg-emerald-50 transition-all">
+                        <div class="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-400 group-hover:bg-emerald-500 group-hover:text-white transition-all mb-4">
+                            <span class="material-symbols-outlined text-2xl">${info.icon}</span>
+                        </div>
+                        <div class="font-bold text-gray-900 mb-1">${info.name}</div>
+                        <div class="text-xs text-gray-500 leading-relaxed">${info.description}</div>
+                    </button>
+                `;
+            }).join('');
         }
     },
 
