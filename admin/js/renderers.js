@@ -888,6 +888,10 @@ const renderers = {
                                     <span class="material-symbols-outlined text-sm">download</span>
                                     Save QR
                                 </button>
+                                <button onclick="app.downloadDataJS()" class="flex-1 border-2 border-slate-100 text-slate-600 py-3 rounded-2xl text-sm font-bold hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
+                                    <span class="material-symbols-outlined text-sm">javascript</span>
+                                    Download data.js
+                                </button>
                             </div>
                         </div>
 

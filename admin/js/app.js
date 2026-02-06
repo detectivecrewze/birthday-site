@@ -725,6 +725,26 @@ const app = {
     saveProgress() {
         state.save();
         utils.showNotification('Progress saved!', 'success');
+    },
+
+    downloadDataJS() {
+        try {
+            const config = state.getConfig();
+            const fileContent = `const CONFIG = ${JSON.stringify(config, null, 4)};`;
+            const blob = new Blob([fileContent], { type: 'text/javascript' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'data.js';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            utils.showNotification('data.js downloaded!', 'success');
+        } catch (e) {
+            console.error('Download failed:', e);
+            utils.showNotification('Failed to download data.js', 'error');
+        }
     }
 };
 
