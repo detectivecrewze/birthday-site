@@ -2000,6 +2000,55 @@
     left: 100%;
 }
 
+/* Delivery Message */
+.tc-delivery-message {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.5s ease 0.2s;
+}
+
+.tc-delivery-message.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.tc-delivery-icon {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto 0.75rem;
+    color: #b33939;
+    opacity: 0.6;
+}
+
+.tc-delivery-icon svg {
+    width: 100%;
+    height: 100%;
+}
+
+.tc-delivery-text {
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    font-style: italic;
+    color: #2d2926;
+    margin-bottom: 0.25rem;
+}
+
+.tc-delivery-date {
+    font-family: 'Courier Prime', monospace;
+    font-size: 0.75rem;
+    color: #2d2926;
+    opacity: 0.6;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.tc-delivery-date span {
+    color: #b33939;
+    font-weight: 600;
+}
+
 /* Footer */
 .tc-footer {
     margin-top: auto;

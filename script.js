@@ -3053,6 +3053,17 @@ window.app = {
                         <p class="tc-seal-hint">Press to seal your message</p>
                     </div>
 
+                    <!-- Delivery Message (appears after seal) -->
+                    <div id="tc-delivery-message" class="tc-delivery-message">
+                        <div class="tc-delivery-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </div>
+                        <p class="tc-delivery-text">Your message is sealed</p>
+                        <p class="tc-delivery-date">Will be delivered on <span id="tc-delivery-date"></span></p>
+                    </div>
+
                     <!-- Finish Button (appears after seal) -->
                     <div class="tc-finish-wrap">
                         <button id="tc-finish-btn" onclick="app.sealAndFinish()" class="tc-finish-btn">
@@ -3211,6 +3222,17 @@ window.app = {
         const waxBlob = document.getElementById('tc-wax-blob-static');
         const finalSeal = document.getElementById('tc-stamped-seal-final');
         const finishWrap = document.querySelector('.tc-finish-wrap');
+        const deliveryMessage = document.getElementById('tc-delivery-message');
+        const deliveryDate = document.getElementById('tc-delivery-date');
+
+        // Calculate delivery date (1 year from now)
+        const nextYear = new Date();
+        nextYear.setFullYear(nextYear.getFullYear() + 1);
+        const formattedDate = nextYear.toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+        });
 
         // Play sounds
         this.playSfx('https://assets.mixkit.co/active_storage/sfx/2561/2561-preview.mp3', 0.2);
@@ -3240,10 +3262,20 @@ window.app = {
                 finalSeal.style.transition = 'all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
             }
 
-            // Hide seal button, show finish button
+            // Hide seal button, show finish button and delivery message
             if (ritualControls) {
                 ritualControls.style.opacity = '0';
                 ritualControls.style.pointerEvents = 'none';
+            }
+
+            // Set delivery date
+            if (deliveryDate) {
+                deliveryDate.textContent = formattedDate;
+            }
+
+            // Show delivery message
+            if (deliveryMessage) {
+                deliveryMessage.classList.add('visible');
             }
 
             if (finishWrap) {
@@ -3319,12 +3351,17 @@ window.app = {
         const finishWrap = document.querySelector('.tc-finish-wrap') || document.querySelector('.tc-finish-btn-container');
         const ritualControls = document.getElementById('tc-ritual-controls');
         const sealArea = document.getElementById('tc-seal-area');
+        const deliveryMessage = document.getElementById('tc-delivery-message');
 
         // Initial hidden states
         if (finishWrap) {
             finishWrap.style.opacity = '0';
             finishWrap.style.pointerEvents = 'none';
             finishWrap.style.transform = 'translateY(10px)';
+        }
+        
+        if (deliveryMessage) {
+            deliveryMessage.classList.remove('visible');
         }
         
         if (ritualControls) {
