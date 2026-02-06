@@ -167,33 +167,6 @@ const renderers = {
                     </div>
                 </div>
 
-                <!-- Background Image -->
-                <div class="field-group-card">
-                    <div class="field-group-title">
-                        <span class="material-symbols-outlined text-sm">image</span>
-                        Environment
-                    </div>
-                    <div class="flex flex-col md:flex-row gap-6 items-start">
-                        <div class="w-24 h-24 bg-white rounded-3xl border-2 border-gray-100 flex items-center justify-center shadow-lg overflow-hidden shrink-0 group hover:border-emerald-300 transition-all">
-                            ${theme.paperImage ? `<img src="${this.fixPath(theme.paperImage)}" class="w-full h-full object-cover">` : `<span class="material-symbols-outlined text-gray-200 text-3xl">image_search</span>`}
-                        </div>
-                        <div class="flex-1 w-full">
-                            <label class="premium-label">Custom Background Photo</label>
-                            <div class="flex gap-3">
-                                <input type="text" id="theme_bg_url" class="premium-input flex-1 text-xs font-mono" value="${theme.paperImage}" 
-                                    placeholder="Paste image URL here..." oninput="state.updateField('theme', 'paperImage', this.value)">
-                                <label class="cursor-pointer bg-white border border-gray-200 rounded-2xl px-5 py-2 flex items-center hover:bg-gray-50 transition-all shadow-sm group">
-                                    <span class="material-symbols-outlined text-gray-500 group-hover:text-emerald-500 transition-colors">upload_file</span>
-                                    <input type="file" class="hidden" accept="image/*" onchange="utils.handleMediaUpload(this, 'theme_bg_url')">
-                                </label>
-                            </div>
-                            <p class="text-[10px] text-gray-400 mt-3 font-bold uppercase tracking-wider flex items-center gap-2">
-                                <span class="material-symbols-outlined text-xs">verified</span>
-                                Recommended: 1920x1080px (MAX 5MB)
-                            </p>
-                        </div>
-                    </div>
-                </div>
 
                 <!-- Presets -->
                 <div class="field-group-card bg-gray-50/50">
