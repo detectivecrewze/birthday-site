@@ -13,9 +13,18 @@ window.app = {
     init: function () {
         this.updatePreloader(30);
 
-        // Check for CONFIG from data.js or window.CONFIG from admin
+        const isPublishedSite = document.documentElement.getAttribute('data-published-site') === 'true';
+
+        // If it's a published site, we MUST wait for window.CONFIG to be populated by the fetch in index.html
+        if (isPublishedSite && !window.CONFIG) {
+            console.log("[App] Published site detected, waiting for remote config...");
+            setTimeout(() => this.init(), 100);
+            return;
+        }
+
+        // Check for CONFIG from data.js or window.CONFIG from admin/remote fetch
         const config = window.CONFIG || (typeof CONFIG !== 'undefined' ? CONFIG : null);
-        console.log('[App] Initializing with config source:', window.CONFIG ? 'window.CONFIG' : 'data.js');
+        console.log('[App] Initializing with config source:', isPublishedSite ? 'Remote Database' : (window.CONFIG ? 'window.CONFIG' : 'data.js'));
 
         if (!config || !config.pages) {
             console.log("📄 CONFIG not loaded yet, retrying init...");
@@ -183,13 +192,13 @@ window.app = {
             if (this.currentPage === index && !this.isTransitioning) {
                 return;
             }
-            
+
             // Prevent multiple transitions at once
             if (this.isTransitioning) {
                 console.log('[App] Transition in progress, ignoring request');
                 return;
             }
-            
+
             this.navigateWithTransition(index);
         }
     },
@@ -197,10 +206,10 @@ window.app = {
     navigateWithTransition: function (targetIndex) {
         this.isTransitioning = true;
         const container = document.getElementById('page-content');
-        
+
         // Play transition sound
         this.playSfx('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3', 0.15);
-        
+
         // Phase 1: Fade out current page with a dramatic effect
         if (container) {
             container.style.transition = `all ${this.transitionDuration}ms cubic-bezier(0.4, 0, 0.2, 1)`;
@@ -208,22 +217,22 @@ window.app = {
             container.style.transform = 'scale(0.95) translateY(20px)';
             container.style.filter = 'blur(4px)';
         }
-        
+
         // Phase 2: Wait for fade out + pause, then change page and fade in
         setTimeout(() => {
             this.currentPage = targetIndex;
             this.renderPage();
-            
+
             // Scroll to top immediately
             window.scrollTo({ top: 0, behavior: 'instant' });
-            
+
             // Prepare for fade in - start from hidden state
             if (container) {
                 container.style.opacity = '0';
                 container.style.transform = 'scale(1.05) translateY(-20px)';
                 container.style.filter = 'blur(4px)';
             }
-            
+
             // Phase 3: Fade in with dramatic effect (after 0.3s pause)
             setTimeout(() => {
                 if (container) {
@@ -231,7 +240,7 @@ window.app = {
                     container.style.transform = 'scale(1) translateY(0)';
                     container.style.filter = 'blur(0px)';
                 }
-                
+
                 // Clear transitioning flag after animation completes
                 setTimeout(() => {
                     this.isTransitioning = false;
@@ -1754,14 +1763,14 @@ window.app = {
 
         // Helper to validate coords (defined locally since isValidCoord might not be available yet)
         const isValidCoord = (coord) => {
-            return Array.isArray(coord) && 
-                   coord.length === 2 && 
-                   typeof coord[0] === 'number' && 
-                   typeof coord[1] === 'number' &&
-                   !isNaN(coord[0]) && 
-                   !isNaN(coord[1]) &&
-                   isFinite(coord[0]) && 
-                   isFinite(coord[1]);
+            return Array.isArray(coord) &&
+                coord.length === 2 &&
+                typeof coord[0] === 'number' &&
+                typeof coord[1] === 'number' &&
+                !isNaN(coord[0]) &&
+                !isNaN(coord[1]) &&
+                isFinite(coord[0]) &&
+                isFinite(coord[1]);
         };
 
         if (data.pins && data.pins.length > 0) {
@@ -1997,7 +2006,7 @@ window.app = {
     },
 
     // Initialize map with journey animation
-    initMapWithJourney: async function(data, mapCenter, mapZoom) {
+    initMapWithJourney: async function (data, mapCenter, mapZoom) {
         // Validate mapCenter before using
         if (!this.isValidCoord(mapCenter)) {
             console.warn('[MapInit] Invalid mapCenter, using default');
@@ -2012,7 +2021,7 @@ window.app = {
         this.mapJourneyState.completed = false;
 
         const loadingText = document.getElementById('map-loading-text');
-        
+
         // Phase 1: Loading
         if (loadingText) loadingText.textContent = 'Unfolding the map...';
         await this.delay(800);
@@ -2077,19 +2086,19 @@ window.app = {
     },
 
     // Helper: Validate coordinates are valid numbers
-    isValidCoord: function(coord) {
-        return Array.isArray(coord) && 
-               coord.length === 2 && 
-               typeof coord[0] === 'number' && 
-               typeof coord[1] === 'number' &&
-               !isNaN(coord[0]) && 
-               !isNaN(coord[1]) &&
-               isFinite(coord[0]) && 
-               isFinite(coord[1]);
+    isValidCoord: function (coord) {
+        return Array.isArray(coord) &&
+            coord.length === 2 &&
+            typeof coord[0] === 'number' &&
+            typeof coord[1] === 'number' &&
+            !isNaN(coord[0]) &&
+            !isNaN(coord[1]) &&
+            isFinite(coord[0]) &&
+            isFinite(coord[1]);
     },
 
     // Animate markers appearing one by one with dramatic zoom effect
-    animateMapJourney: async function() {
+    animateMapJourney: async function () {
         const pins = this.mapJourneyState.pins;
         const map = this.mapJourneyState.map;
         const mapCenter = this.mapJourneyState.mapCenter;
@@ -2249,7 +2258,7 @@ window.app = {
     },
 
     // Handle marker click
-    handleMarkerClick: function(index, pin) {
+    handleMarkerClick: function (index, pin) {
         if (!pin || !this.isValidCoord(pin.coords)) {
             console.warn('[MarkerClick] Invalid pin or coordinates');
             return;
@@ -2290,30 +2299,30 @@ window.app = {
     },
 
     // Calculate map statistics
-    calculateMapStats: function() {
+    calculateMapStats: function () {
         const pins = this.mapJourneyState.pins || [];
         const validPins = pins.filter(p => this.isValidCoord(p.coords));
         const locations = validPins.length;
-        
+
         console.log('[MapStats] Calculating stats for', locations, 'valid locations');
-        
+
         if (locations < 1) {
             return { html: '<p class="text-vintage-ink">Start adding locations to see your journey stats!</p>', locations: 0, distance: 0 };
         }
 
         // Calculate total distance between consecutive pins
         let totalDistance = 0;
-        
+
         for (let i = 1; i < validPins.length; i++) {
-            if (!this.isValidCoord(validPins[i-1].coords) || !this.isValidCoord(validPins[i].coords)) continue;
-            
+            if (!this.isValidCoord(validPins[i - 1].coords) || !this.isValidCoord(validPins[i].coords)) continue;
+
             const dist = this.calculateDistance(
-                validPins[i-1].coords[0], validPins[i-1].coords[1],
+                validPins[i - 1].coords[0], validPins[i - 1].coords[1],
                 validPins[i].coords[0], validPins[i].coords[1]
             );
             if (!isNaN(dist) && isFinite(dist)) {
                 totalDistance += dist;
-                console.log('[MapStats] Distance from', i-1, 'to', i, ':', dist.toFixed(2), 'km');
+                console.log('[MapStats] Distance from', i - 1, 'to', i, ':', dist.toFixed(2), 'km');
             }
         }
 
@@ -2333,9 +2342,9 @@ window.app = {
     },
 
     // Calculate distance between two coordinates (Haversine formula)
-    calculateDistance: function(lat1, lon1, lat2, lon2) {
+    calculateDistance: function (lat1, lon1, lat2, lon2) {
         // Validate all inputs
-        if (typeof lat1 !== 'number' || typeof lon1 !== 'number' || 
+        if (typeof lat1 !== 'number' || typeof lon1 !== 'number' ||
             typeof lat2 !== 'number' || typeof lon2 !== 'number' ||
             isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2) ||
             !isFinite(lat1) || !isFinite(lon1) || !isFinite(lat2) || !isFinite(lon2)) {
@@ -2346,24 +2355,24 @@ window.app = {
         const R = 6371; // Earth's radius in km
         const dLat = (lat2 - lat1) * Math.PI / 180;
         const dLon = (lon2 - lon1) * Math.PI / 180;
-        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                  Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                  Math.sin(dLon/2) * Math.sin(dLon/2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         const distance = R * c;
-        
+
         return isNaN(distance) || !isFinite(distance) ? 0 : distance;
     },
 
     // Show discovery popup
-    showDiscoveryPopup: function() {
+    showDiscoveryPopup: function () {
         console.log('[Discovery] Showing discovery popup');
         const popup = document.getElementById('discovery-popup');
         const messageEl = document.getElementById('discovery-message');
         const locationsEl = document.getElementById('discovery-locations');
         const distanceEl = document.getElementById('discovery-distance');
         const memoriesEl = document.getElementById('discovery-memories');
-        
+
         if (!popup) {
             console.error('[Discovery] Popup element not found!');
             return;
@@ -2371,12 +2380,12 @@ window.app = {
 
         const stats = this.calculateMapStats();
         console.log('[Discovery] Stats:', stats);
-        
+
         // Update message
         if (messageEl) {
             messageEl.innerHTML = stats.html;
         }
-        
+
         // Update stats numbers with animation
         if (locationsEl) {
             this.animateNumber(locationsEl, 0, stats.locations, 1000);
@@ -2390,7 +2399,7 @@ window.app = {
 
         popup.classList.remove('opacity-0', 'pointer-events-none');
         popup.classList.add('opacity-100', 'pointer-events-auto');
-        
+
         const modal = popup.querySelector('.relative');
         if (modal) {
             modal.classList.remove('scale-90');
@@ -2402,17 +2411,17 @@ window.app = {
     },
 
     // Animate number counting up
-    animateNumber: function(element, start, end, duration) {
+    animateNumber: function (element, start, end, duration) {
         if (!element) return;
         const range = end - start;
         const minTimer = 50;
         let stepTime = Math.abs(Math.floor(duration / range));
         stepTime = Math.max(stepTime, minTimer);
-        
+
         let startTime = new Date().getTime();
         let endTime = startTime + duration;
         let timer;
-        
+
         const run = () => {
             let now = new Date().getTime();
             let remaining = Math.max((endTime - now) / duration, 0);
@@ -2422,19 +2431,19 @@ window.app = {
                 clearInterval(timer);
             }
         };
-        
+
         timer = setInterval(run, stepTime);
         run();
     },
 
     // Close discovery popup
-    closeDiscoveryPopup: function() {
+    closeDiscoveryPopup: function () {
         const popup = document.getElementById('discovery-popup');
         if (!popup) return;
 
         popup.classList.add('opacity-0', 'pointer-events-none');
         popup.classList.remove('opacity-100', 'pointer-events-auto');
-        
+
         const modal = popup.querySelector('.relative');
         if (modal) {
             modal.classList.add('scale-90');
@@ -2443,7 +2452,7 @@ window.app = {
     },
 
     // Helper: delay function
-    delay: function(ms) {
+    delay: function (ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
     },
 
@@ -3104,13 +3113,13 @@ window.app = {
             if (this.currentPage === index && !this.isTransitioning) {
                 return;
             }
-            
+
             // Prevent multiple transitions at once
             if (this.isTransitioning) {
                 console.log('[App] Transition in progress, ignoring request');
                 return;
             }
-            
+
             this.navigateWithTransition(index);
         }
     },
