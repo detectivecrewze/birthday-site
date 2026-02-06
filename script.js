@@ -1637,7 +1637,7 @@ window.app = {
                     <div class="polaroid-front polaroid-frame">
                         <div class="relative overflow-hidden bg-stone-100 rounded-sm">
                             <img src="${photo.url}" class="memory-photo w-full h-[220px] md:h-[260px] object-cover" alt="Memory">
-                            <canvas id="scratch-${index}" class="absolute inset-0 w-full h-full cursor-pointer z-20 touch-none transition-opacity duration-500"></canvas>
+                            <canvas id="scratch-${index}" class="absolute inset-0 w-full h-full cursor-pointer z-20 touch-none transition-opacity duration-500 scratch-canvas"></canvas>
                         </div>
                         <div class="mt-4 flex flex-col gap-1">
                             <p class="handwritten text-xl md:text-2xl leading-tight text-ink-black/80">${photo.caption || ''}</p>
@@ -1664,16 +1664,12 @@ window.app = {
 
             grid.appendChild(card);
 
-            // Initialize scratch
-            const scratchDelay = isPreview ? 300 : (2000 + (index * 800));
-            const timeout = setTimeout(() => {
-                const canvas = document.getElementById(`scratch-${index}`);
-                const hint = document.getElementById(`hint-${index}`);
-                if (canvas) {
-                    this.initPolaroidScratch(canvas, hint);
-                }
-            }, scratchDelay);
-            this.activeAnimations.push(timeout);
+            // Initialize scratch synchronously to prevent photo showing
+            const canvas = card.querySelector(`#scratch-${index}`);
+            const hint = card.querySelector(`#hint-${index}`);
+            if (canvas) {
+                this.initPolaroidScratch(canvas, hint);
+            }
         });
 
         // Show continue button after polaroids animate in
@@ -2178,95 +2174,54 @@ window.app = {
             await this.delay(1400);
 
             // PHASE 2: Create and animate marker appearing
-            // PHASE 2: Create and animate marker appearing
-            // Pixel-perfect pin: tip at exact lat/lng, water-drop shape with white circle + red center
+            // Stable marker using simple Material Icon like reference implementation
             const markerIcon = L.divIcon({
-                className: 'custom-leaflet-pin journey-marker',
-                html: `
-                    <div class="pin-group pin-precision-wrapper" id="marker-${i}">
-                        <div class="pin-hover-effect">
-                            <!-- Classic red water-drop pin with white circle and red center dot -->
-                            <svg class="pin-svg" viewBox="0 0 36 48" xmlns="http://www.w3.org/2000/svg">
-                                <!-- Water-drop shape -->
-                                <path class="pin-body" d="M18 0C8.059 0 0 8.059 0 18c0 13.5 18 30 18 30s18-16.5 18-30C36 8.059 27.941 0 18 0z" fill="#b33939"/>
-                                <!-- White circle in middle -->
-                                <circle class="pin-white-circle" cx="18" cy="16" r="7" fill="white"/>
-                                <!-- Small red dot in center -->
-                                <circle class="pin-red-dot" cx="18" cy="16" r="3" fill="#b33939"/>
-                            </svg>
-                            <!-- Shadow below pin -->
-                            <div class="pin-shadow"></div>
-                            <!-- Pulse animation ring -->
-                            <div class="pin-pulse-ring"></div>
-                        </div>
-                        
-                        <div id="popover-${i}" class="pin-popover">
-                            <div class="polaroid-frame !p-2 md:!p-2.5 !pb-8 md:!pb-10 shadow-[0_15px_30px_rgba(0,0,0,0.3)] md:shadow-[0_25px_50px_rgba(0,0,0,0.35)] border-2 border-stone-200/50 bg-white origin-bottom">
-                                <div class="absolute -top-3 left-1/2 -translate-x-1/2 w-12 md:w-14 h-4 md:h-5 bg-yellow-100/60 backdrop-blur-sm border-x border-black/5 z-20"></div>
-                                <div class="bg-stone-100 overflow-hidden aspect-square rounded-sm relative w-full">
-                                    <img src="${pin.photo || ''}" class="block !w-full !h-full object-cover object-top" style="filter: none !important;" alt="Memory" onerror="this.style.display='none'">
-                                </div>
-                                <div class="mt-3 md:mt-5 px-1 md:px-2 whitespace-normal">
-                                    <p class="font-marker text-base md:text-lg leading-snug text-vintage-ink/90">${pin.label || pin.note || ''}</p>
-                                    <p class="text-[10px] md:text-xs mt-1 md:mt-2 font-handwritten text-vintage-ink/60 tracking-wider text-right italic">${pin.date || ''}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `,
-                iconSize: [36, 48],
-                iconAnchor: [18, 48]
+                html: `<div class="journey-marker-pin" id="marker-${i}">
+                        <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1">favorite</span>
+                        <div class="pin-pulse"></div>
+                       </div>`,
+                className: 'journey-marker-container',
+                iconSize: [32, 32],
+                iconAnchor: [16, 32]
             });
 
             let marker;
             try {
-                // Make marker draggable for map picker functionality
+                // Create popup content (like the old popover)
+                const popupContent = `
+                    <div class="journey-popup-content">
+                        <div class="relative bg-white p-2 pb-8 shadow-lg border-2 border-stone-200" style="width: 180px;">
+                            <div class="absolute -top-3 left-1/2 -translate-x-1/2 w-12 h-4 bg-yellow-100 border-x border-black/5 z-20"></div>
+                            <div class="bg-stone-100 overflow-hidden aspect-square relative">
+                                <img src="${pin.photo || ''}" class="w-full h-full object-cover" alt="Memory" onerror="this.style.display='none'">
+                            </div>
+                            <div class="mt-3 px-1">
+                                <p class="font-handwriting text-lg text-vintage-ink">${pin.label || pin.note || ''}</p>
+                                <p class="text-xs mt-1 font-handwritten text-vintage-ink/60 text-right italic">${pin.date || ''}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Create marker WITHOUT draggable (for stability)
                 marker = L.marker(coords, { 
                     icon: markerIcon,
-                    draggable: true,  // Enable dragging
-                    autoPan: true     // Auto-pan map when dragging near edges
+                    draggable: false  // Disable dragging for stability
+                }).bindPopup(popupContent, {
+                    className: 'journey-popup',
+                    closeButton: false,
+                    offset: [0, -10]
                 }).addTo(map);
                 
                 this.mapJourneyState.markers.push(marker);
                 
                 // Add click handler
-                marker.on('click', () => this.handleMarkerClick(i, pin));
-                
-                // Handle drag events - update pin data when dropped
-                marker.on('dragend', (event) => {
-                    const newPos = event.target.getLatLng();
-                    console.log(`[Marker ${i}] Dropped at:`, newPos.lat, newPos.lng);
-                    
-                    // Update the pin's coordinates in your data
-                    if (this.mapJourneyState.pins[i]) {
-                        this.mapJourneyState.pins[i].coords = [newPos.lat, newPos.lng];
-                    }
-                    
-                    // Optional: Show confirmation animation
-                    const markerEl = document.getElementById(`marker-${i}`);
-                    if (markerEl) {
-                        markerEl.classList.add('pin-locked');
-                        setTimeout(() => markerEl.classList.remove('pin-locked'), 300);
-                    }
-                    
-                    // Optional: Callback for external handling
-                    if (typeof this.onPinMoved === 'function') {
-                        this.onPinMoved(i, newPos.lat, newPos.lng);
-                    }
-                });
-                
-                // Visual feedback during drag
-                marker.on('dragstart', () => {
-                    const markerEl = document.getElementById(`marker-${i}`);
-                    if (markerEl) {
-                        markerEl.classList.add('pin-dragging');
-                    }
-                });
-                
-                marker.on('drag', () => {
-                    // Optional: Real-time coordinate display
-                    const pos = marker.getLatLng();
-                    console.log(`[Marker ${i}] Dragging:`, pos.lat.toFixed(6), pos.lng.toFixed(6));
+                marker.on('click', () => {
+                    // Zoom to marker
+                    const zoomLevel = window.innerWidth < 768 ? 17 : 16;
+                    map.flyTo(coords, zoomLevel, { duration: 1.5 });
+                    marker.openPopup();
+                    this.playSfx('https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3', 0.2);
                 });
                 
             } catch (e) {
@@ -2274,13 +2229,10 @@ window.app = {
                 continue;
             }
 
-            // Animate marker appearing with bounce
-            // Uses CSS classes for transforms - NO inline transforms that would fight Leaflet positioning
+            // Animate marker appearing
             const markerEl = document.getElementById(`marker-${i}`);
             if (markerEl) {
-                markerEl.classList.add('pin-drop-in');
-                await this.delay(100);
-                markerEl.classList.add('pin-settled');
+                setTimeout(() => markerEl.classList.add('animate-in'), 100);
             }
 
             // Play dramatic sound
@@ -3607,25 +3559,47 @@ window.app = {
         let scratchAudio = new Audio('assets/scratching.mp3');
         scratchAudio.volume = 0.15;
         let scratchTimeout;
+        
+        // Brush size - same for all devices for consistency
+        const brushSize = 35;
 
         const container = canvas.parentElement;
         if (!container) return;
 
         const init = () => {
+            // Get container dimensions
             const rect = container.getBoundingClientRect();
+            
+            // If dimensions not ready, retry quickly
+            if (rect.width === 0 || rect.height === 0) {
+                requestAnimationFrame(init);
+                return;
+            }
+            
+            // Set canvas size
             canvas.width = rect.width;
             canvas.height = rect.height;
 
-            // Silver scratch coating
+            // Fill with solid scratch coating
+            ctx.globalCompositeOperation = 'source-over';
             ctx.fillStyle = '#C0C0C0';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Subtle texture/grain
-            ctx.fillStyle = 'rgba(0,0,0,0.15)';
+            
+            // Add texture
+            ctx.fillStyle = 'rgba(255,255,255,0.1)';
             for (let i = 0; i < 500; i++) {
-                ctx.fillRect(Math.random() * canvas.width, Math.random() * canvas.height, 1, 1);
+                const x = Math.random() * canvas.width;
+                const y = Math.random() * canvas.height;
+                ctx.fillRect(x, y, 2, 2);
+            }
+            ctx.fillStyle = 'rgba(0,0,0,0.05)';
+            for (let i = 0; i < 500; i++) {
+                const x = Math.random() * canvas.width;
+                const y = Math.random() * canvas.height;
+                ctx.fillRect(x, y, 2, 2);
             }
 
+            // Switch to destination-out for scratching
             ctx.globalCompositeOperation = 'destination-out';
         };
 
@@ -3653,7 +3627,7 @@ window.app = {
             const pos = getPos(e);
 
             ctx.beginPath();
-            ctx.arc(pos.x, pos.y, 25, 0, Math.PI * 2);
+            ctx.arc(pos.x, pos.y, brushSize, 0, Math.PI * 2);
             ctx.fill();
 
             // Play scratching sound with control
@@ -3719,7 +3693,8 @@ window.app = {
             scratch(e);
         }, { passive: false });
 
-        init();
+        // Initialize with a small delay to ensure DOM is ready
+        setTimeout(init, 10);
         window.addEventListener('resize', init);
     },
 
@@ -3749,7 +3724,7 @@ window.app = {
 
         // The Scratch Canvas
         const canvas = document.createElement('canvas');
-        canvas.className = 'absolute inset-0 w-full h-full cursor-pointer z-10 touch-none';
+        canvas.className = 'absolute inset-0 w-full h-full cursor-pointer z-10 touch-none scratch-canvas';
 
         canvasContainer.appendChild(hiddenImg);
         canvasContainer.appendChild(canvas);
@@ -3776,14 +3751,33 @@ window.app = {
         let scratchAudio = new Audio('assets/scratching.mp3');
         scratchAudio.volume = 0.15;
         let scratchTimeout;
+        
+        // Brush size from config or default
+        const brushSize = parseInt(data.brushSize) || 40;
 
         const initCanvas = () => {
             const rect = canvasContainer.getBoundingClientRect();
+            
+            // Ensure valid dimensions
+            if (rect.width === 0 || rect.height === 0) {
+                setTimeout(initCanvas, 50);
+                return;
+            }
+            
             canvas.width = rect.width;
             canvas.height = rect.height;
 
             // Fill with coating
+            ctx.globalCompositeOperation = 'source-over';
             ctx.fillStyle = data.overlayColor || '#cbd5e1';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Add gradient
+            const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+            gradient.addColorStop(0, 'rgba(255,255,255,0.15)');
+            gradient.addColorStop(0.5, 'rgba(255,255,255,0)');
+            gradient.addColorStop(1, 'rgba(0,0,0,0.05)');
+            ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             // Add grain effect
@@ -3819,7 +3813,7 @@ window.app = {
             const pos = getPos(e);
 
             ctx.beginPath();
-            ctx.arc(pos.x, pos.y, parseInt(data.brushSize) || 40, 0, Math.PI * 2);
+            ctx.arc(pos.x, pos.y, brushSize, 0, Math.PI * 2);
             ctx.fill();
 
             // Play scratching sound
@@ -3878,7 +3872,7 @@ window.app = {
             scratch(e);
         }, { passive: false });
 
-        setTimeout(initCanvas, 300);
+        setTimeout(initCanvas, 10);
     },
 
     calculateLifeStats: function (birthDateStr) {

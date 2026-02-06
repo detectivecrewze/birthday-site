@@ -644,11 +644,19 @@ const app = {
 
         try {
             const config = state.getConfig();
-            // Generate a unique ID based on timestamp + random string
-            const timestamp = Date.now().toString(36);
-            const randomStr = Math.random().toString(36).substring(2, 8);
-            const id = `${timestamp}-${randomStr}`;
-            const siteUrl = `https://birthday-site-wine-sigma.vercel.app/?to=${id}`;
+            // Use recipient name for URL if available, otherwise generate unique ID
+            const recipientName = (config.metadata?.customerName || '').trim();
+            let id;
+            if (recipientName) {
+                // Convert name to URL-friendly format (lowercase, replace spaces with hyphens)
+                id = recipientName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+            } else {
+                // Generate a unique ID based on timestamp + random string
+                const timestamp = Date.now().toString(36);
+                const randomStr = Math.random().toString(36).substring(2, 8);
+                id = `${timestamp}-${randomStr}`;
+            }
+            const siteUrl = `https://birthday-site-wine-sigma.vercel.app/?to=${encodeURIComponent(id)}`;
 
             const response = await fetch('https://valentine-upload.aldoramadhan16.workers.dev/save-config?id=' + encodeURIComponent(id), {
                 method: 'POST',
