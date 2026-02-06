@@ -653,7 +653,7 @@ const app = {
             }
 
             const id = recipientName.toLowerCase().replace(/\s+/g, '-');
-            const siteUrl = `https://birthday-engine.vercel.app/?to=${id}`;
+            const siteUrl = `https://birthday-site-wine-sigma.vercel.app/?to=${id}`;
 
             const response = await fetch('https://valentine-upload.aldoramadhan16.workers.dev/save-config?id=' + encodeURIComponent(id), {
                 method: 'POST',
