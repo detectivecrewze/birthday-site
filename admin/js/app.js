@@ -440,12 +440,21 @@ const app = {
 
             modal.classList.remove('hidden');
             modal.classList.add('flex');
+            
+            // Navigate to current page after iframe loads
+            iframe.onload = () => {
+                setTimeout(() => {
+                    this.scrollPreviewToCurrentPage();
+                }, 500); // Wait for preview to fully initialize
+            };
         }
     },
 
     openFullPreview() {
         state.save();
-        window.open("../index.html?preview=full", "_blank");
+        const step = this.wizardSteps[this.currentStep];
+        const targetIdx = step?.previewPageIndex !== undefined ? step.previewPageIndex : (step?.pageIndex || 0);
+        window.open(`../index.html?preview=full&page=${targetIdx}`, "_blank");
     },
 
 
