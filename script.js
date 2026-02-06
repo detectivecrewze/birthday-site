@@ -186,24 +186,31 @@ window.app = {
         }
     },
 
-    goToPage: function (index) {
+    goToPage: function (index, force = false) {
         if (typeof index === 'number' && index >= 0 && index < window.CONFIG.pages.length) {
-            // Skip transition if already on this page
+            // Skip if already on this page
             if (this.currentPage === index && !this.isTransitioning) {
                 return;
             }
 
-            // Prevent multiple transitions at once
-            if (this.isTransitioning) {
+            // Prevent multiple transitions unless forced
+            if (this.isTransitioning && !force) {
                 console.log('[App] Transition in progress, ignoring request');
                 return;
             }
 
-            this.navigateWithTransition(index);
+            this.navigateWithTransition(index, force);
         }
     },
 
-    navigateWithTransition: function (targetIndex) {
+    navigateWithTransition: function (targetIndex, force = false) {
+        if (force) {
+            this.isTransitioning = false; // Reset to ensure clean state
+            this.currentPage = targetIndex;
+            this.renderPage();
+            return;
+        }
+
         this.isTransitioning = true;
         const container = document.getElementById('page-content');
 
@@ -1302,9 +1309,9 @@ window.app = {
                 <div class="absolute inset-0 bg-radial-gradient from-white/10 to-transparent pointer-events-none"></div>
             </div>
             
-            <div class="min-h-screen font-mono text-ink-black flex flex-col items-center justify-start pt-2 pb-12 px-4 relative z-10 overflow-hidden">
+            <div class="min-h-screen font-mono text-ink-black flex flex-col items-center justify-start pt-0 pb-12 px-4 relative z-10 overflow-hidden">
                 <!-- Printer Hardware -->
-                <div class="relative z-50 w-full max-w-[420px] -mb-2">
+                <div class="relative z-50 w-full max-w-[420px] -mb-2 -mt-4">
                     <div id="printer-body" class="printer-body w-full h-44 rounded-t-3xl rounded-b-lg relative border-b-8 border-stone-800 flex flex-col items-center pt-7">
                         <div class="absolute top-5 left-10 flex gap-2">
                             <div class="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_5px_rgba(34,197,94,0.8)] animate-led-pulse"></div>
@@ -1899,6 +1906,60 @@ window.app = {
                             .leaflet-tile-pane {
                                 filter: grayscale(100%) sepia(40%) contrast(110%) brightness(90%);
                             }
+                            
+                            /* Precise Modern Map Pin (Main App) */
+                            .map-pin-container {
+                                position: relative;
+                                width: 32px;
+                                height: 42px;
+                                transform-origin: bottom center;
+                                filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+                            }
+
+                            .map-pin-pulse {
+                                position: absolute;
+                                bottom: 0px;
+                                left: 50%;
+                                width: 16px;
+                                height: 6px;
+                                background: rgba(239, 68, 68, 0.4);
+                                border-radius: 50%;
+                                transform: translate(-50%, 50%) scale(0);
+                                animation: pinPulse 2s infinite;
+                                z-index: -1;
+                            }
+
+                            .map-pin-body {
+                                width: 32px;
+                                height: 42px;
+                                position: relative;
+                                z-index: 2;
+                            }
+
+                            .map-precision-dot {
+                                position: absolute;
+                                bottom: -2px;
+                                left: 50%;
+                                transform: translateX(-50%);
+                                width: 3px;
+                                height: 3px;
+                                background: #ef4444;
+                                border-radius: 50%;
+                                border: 1px solid white;
+                                z-index: 3;
+                                box-shadow: 0 0 3px rgba(239, 68, 68, 0.8);
+                            }
+
+                            @keyframes pinPulse {
+                                0% { transform: translate(-50%, 50%) scale(0.5); opacity: 1; }
+                                100% { transform: translate(-50%, 50%) scale(2.5); opacity: 0; }
+                            }
+
+                            .leaflet-marker-icon.journey-marker-container {
+                                background: none !important;
+                                border: none !important;
+                                overflow: visible !important;
+                            }
                         </style>
 
                         <!-- Grain Overlay -->
@@ -2174,37 +2235,57 @@ window.app = {
             await this.delay(1400);
 
             // PHASE 2: Create and animate marker appearing
-            // Stable marker using simple Material Icon like reference implementation
+            // Premium Precision Marker Design
             const markerIcon = L.divIcon({
-                html: `<div class="journey-marker-pin" id="marker-${i}">
-                        <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1">favorite</span>
-                        <div class="pin-pulse"></div>
-                       </div>`,
+                html: `
+                    <div class="map-pin-container" id="marker-${i}">
+                        <div class="map-pin-pulse"></div>
+                        <div class="map-precision-dot"></div>
+                        <div class="map-pin-body">
+                            <svg width="32" height="42" viewBox="0 0 40 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M20 52C20 52 40 38 40 20C40 8.95 31.05 0 20 0C8.95 0 0 8.95 0 20C0 38 20 52 20 52Z" fill="#EF4444"/>
+                                <circle cx="20" cy="20" r="11" fill="white"/>
+                                <circle cx="20" cy="20" r="5" fill="#EF4444"/>
+                            </svg>
+                        </div>
+                    </div>`,
                 className: 'journey-marker-container',
-                iconSize: [32, 32],
-                iconAnchor: [16, 32]
+                iconSize: [32, 42],
+                iconAnchor: [16, 42]
             });
 
             let marker;
             try {
-                // Create popup content (like the old popover)
+                // Redesigned Polaroid Popup (Title Above Photo)
                 const popupContent = `
-                    <div class="journey-popup-content">
-                        <div class="relative bg-white p-2 pb-8 shadow-lg border-2 border-stone-200" style="width: 180px;">
-                            <div class="absolute -top-3 left-1/2 -translate-x-1/2 w-12 h-4 bg-yellow-100 border-x border-black/5 z-20"></div>
-                            <div class="bg-stone-100 overflow-hidden aspect-square relative">
-                                <img src="${pin.photo || ''}" class="w-full h-full object-cover" alt="Memory" onerror="this.style.display='none'">
+                    <div class="map-polaroid">
+                        <div class="map-polaroid-inner animate-in">
+                            <div class="map-polaroid-tape"></div>
+                            
+                            <!-- Title at the Top -->
+                            <div class="map-polaroid-header">
+                                <span class="material-symbols-outlined text-[12px] text-blue-500/60 inline-block align-middle mr-1">location_on</span>
+                                <h4 class="map-polaroid-label">${pin.label || ''}</h4>
                             </div>
-                            <div class="mt-3 px-1">
-                                <p class="font-handwriting text-lg text-vintage-ink">${pin.label || pin.note || ''}</p>
-                                <p class="text-xs mt-1 font-handwritten text-vintage-ink/60 text-right italic">${pin.date || ''}</p>
+
+                            <div class="map-polaroid-image-wrap">
+                                <img src="${pin.photo || ''}" class="map-polaroid-image" alt="Memory" onerror="this.style.display='none'">
+                                <div class="map-polaroid-sheen"></div>
+                            </div>
+                            
+                            <div class="map-polaroid-content">
+                                <p class="map-polaroid-note">${pin.note || ''}</p>
+                                <div class="map-polaroid-footer">
+                                    <span class="map-polaroid-date">${pin.date || ''}</span>
+                                    <span class="material-symbols-outlined text-[10px] text-ribbon-red/40">favorite</span>
+                                </div>
                             </div>
                         </div>
                     </div>
                 `;
-                
+
                 // Create marker WITHOUT draggable (for stability)
-                marker = L.marker(coords, { 
+                marker = L.marker(coords, {
                     icon: markerIcon,
                     draggable: false  // Disable dragging for stability
                 }).bindPopup(popupContent, {
@@ -2212,18 +2293,38 @@ window.app = {
                     closeButton: false,
                     offset: [0, -10]
                 }).addTo(map);
-                
+
                 this.mapJourneyState.markers.push(marker);
-                
-                // Add click handler
-                marker.on('click', () => {
-                    // Zoom to marker
-                    const zoomLevel = window.innerWidth < 768 ? 17 : 16;
-                    map.flyTo(coords, zoomLevel, { duration: 1.5 });
-                    marker.openPopup();
-                    this.playSfx('https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3', 0.2);
+
+                // Interactive Marker Logic
+                marker.on('click', (e) => {
+                    L.DomEvent.stopPropagation(e);
+                    const currentZoom = map.getZoom();
+                    const targetZoom = window.innerWidth < 768 ? 17 : 16;
+
+                    // Toggle logic: If already zoomed in or popup open, zoom out
+                    if (currentZoom >= targetZoom && marker.isPopupOpen()) {
+                        map.flyTo(this.mapJourneyState.mapCenter, this.mapJourneyState.mapZoom, { duration: 1.5 });
+                        marker.closePopup();
+                    } else {
+                        // Zoom in and open
+                        map.flyTo(coords, targetZoom, { duration: 1.5 });
+                        marker.openPopup();
+                        this.playSfx('https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3', 0.2);
+                    }
                 });
-                
+
+                // Zoom out when clicking on the polaroid itself
+                marker.on('popupopen', () => {
+                    const popupNode = marker.getPopup().getElement();
+                    if (popupNode) {
+                        popupNode.addEventListener('click', (e) => {
+                            map.flyTo(this.mapJourneyState.mapCenter, this.mapJourneyState.mapZoom, { duration: 1.5 });
+                            marker.closePopup();
+                        });
+                    }
+                });
+
             } catch (e) {
                 console.error('[Journey] Error creating marker for pin', i, e);
                 continue;
@@ -2275,6 +2376,12 @@ window.app = {
             // Brief pause before next location
             await this.delay(300);
         }
+
+        // Add Map-Level Click to Zoom Out (Empty Space)
+        map.on('click', () => {
+            map.flyTo(this.mapJourneyState.mapCenter, this.mapJourneyState.mapZoom, { duration: 1.5 });
+            map.closePopup();
+        });
 
         // Final zoom to see all markers
         if (validPins.length > 1) {
@@ -2799,10 +2906,10 @@ window.app = {
         `;
     },
 
-    saveRecipientAndFinish: function() {
+    saveRecipientAndFinish: function () {
         const nameInput = document.getElementById('finish-recipient-name');
         const recipientName = nameInput ? nameInput.value.trim() : '';
-        
+
         if (recipientName) {
             // Store in CONFIG
             if (window.CONFIG) {
@@ -2810,12 +2917,12 @@ window.app = {
                 if (!window.CONFIG.metadata) window.CONFIG.metadata = {};
                 window.CONFIG.metadata.customerName = recipientName;
             }
-            
+
             // Update URL parameter - this creates the personalized URL
             const url = new URL(window.location.href);
             url.searchParams.set('for', encodeURIComponent(recipientName));
             window.history.replaceState({}, '', url);
-            
+
             // Show completion with the personalized link
             this.showCompletionScreen(recipientName);
         } else {
@@ -2823,17 +2930,17 @@ window.app = {
         }
     },
 
-    skipRecipient: function() {
+    skipRecipient: function () {
         this.showCompletionScreen();
     },
 
-    showCompletionScreen: function(recipientName) {
+    showCompletionScreen: function (recipientName) {
         const container = document.getElementById('page-content');
         const currentUrl = window.location.href;
-        const shareableUrl = recipientName ? 
-            currentUrl.replace(/[?&]for=/, '?to=').replace(/[?&]for=[^&]*/, '?to=' + encodeURIComponent(recipientName.toLowerCase().replace(/\s+/g, '-'))) : 
+        const shareableUrl = recipientName ?
+            currentUrl.replace(/[?&]for=/, '?to=').replace(/[?&]for=[^&]*/, '?to=' + encodeURIComponent(recipientName.toLowerCase().replace(/\s+/g, '-'))) :
             currentUrl;
-        
+
         container.innerHTML = `
             <div class="fixed inset-0 inside-box-container z-0">
                 <div class="silk-tissue opacity-50"></div>
@@ -2881,7 +2988,7 @@ window.app = {
         `;
     },
 
-    copyShareLink: function() {
+    copyShareLink: function () {
         const linkInput = document.getElementById('share-link');
         if (linkInput) {
             linkInput.select();
@@ -2891,7 +2998,7 @@ window.app = {
         }
     },
 
-    shareLink: function(recipientName) {
+    shareLink: function (recipientName) {
         const url = document.getElementById('share-link')?.value || window.location.href;
         if (navigator.share) {
             navigator.share({
@@ -2904,7 +3011,7 @@ window.app = {
         }
     },
 
-    showToast: function(message) {
+    showToast: function (message) {
         const toast = document.createElement('div');
         toast.className = 'fixed bottom-8 left-1/2 -translate-x-1/2 bg-ink-black/90 text-white px-6 py-3 rounded-full font-body text-sm z-50 animate-fade-in';
         toast.textContent = message;
@@ -3228,10 +3335,10 @@ window.app = {
         // Calculate delivery date (1 year from now)
         const nextYear = new Date();
         nextYear.setFullYear(nextYear.getFullYear() + 1);
-        const formattedDate = nextYear.toLocaleDateString('en-US', { 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
+        const formattedDate = nextYear.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
         });
 
         // Play sounds
@@ -3252,10 +3359,10 @@ window.app = {
 
         setTimeout(() => {
             this.playSfx('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3', 0.8);
-            
+
             if (waxDrop) waxDrop.style.opacity = '0';
             if (waxBlob) waxBlob.style.opacity = '0';
-            
+
             if (finalSeal) {
                 finalSeal.style.opacity = '1';
                 finalSeal.style.transform = 'scale(1)';
@@ -3359,11 +3466,11 @@ window.app = {
             finishWrap.style.pointerEvents = 'none';
             finishWrap.style.transform = 'translateY(10px)';
         }
-        
+
         if (deliveryMessage) {
             deliveryMessage.classList.remove('visible');
         }
-        
+
         if (ritualControls) {
             ritualControls.style.opacity = '0';
             ritualControls.style.pointerEvents = 'none';
@@ -3373,17 +3480,17 @@ window.app = {
             sealArea.style.opacity = '0';
             sealArea.style.pointerEvents = 'none';
         }
-        
+
         if (finalSeal) {
             finalSeal.style.opacity = '0';
             finalSeal.style.transform = 'scale(0.8)';
         }
-        
+
         if (waxBlob) {
             waxBlob.style.opacity = '0';
             waxBlob.style.transform = 'scale(0)';
         }
-        
+
         if (waxDrop) {
             waxDrop.style.opacity = '0';
             waxDrop.style.width = '0';
@@ -3596,7 +3703,7 @@ window.app = {
         let scratchAudio = new Audio('assets/scratching.mp3');
         scratchAudio.volume = 0.15;
         let scratchTimeout;
-        
+
         // Brush size - same for all devices for consistency
         const brushSize = 35;
 
@@ -3606,13 +3713,13 @@ window.app = {
         const init = () => {
             // Get container dimensions
             const rect = container.getBoundingClientRect();
-            
+
             // If dimensions not ready, retry quickly
             if (rect.width === 0 || rect.height === 0) {
                 requestAnimationFrame(init);
                 return;
             }
-            
+
             // Set canvas size
             canvas.width = rect.width;
             canvas.height = rect.height;
@@ -3621,7 +3728,7 @@ window.app = {
             ctx.globalCompositeOperation = 'source-over';
             ctx.fillStyle = '#C0C0C0';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
+
             // Add texture
             ctx.fillStyle = 'rgba(255,255,255,0.1)';
             for (let i = 0; i < 500; i++) {
@@ -3788,19 +3895,19 @@ window.app = {
         let scratchAudio = new Audio('assets/scratching.mp3');
         scratchAudio.volume = 0.15;
         let scratchTimeout;
-        
+
         // Brush size from config or default
         const brushSize = parseInt(data.brushSize) || 40;
 
         const initCanvas = () => {
             const rect = canvasContainer.getBoundingClientRect();
-            
+
             // Ensure valid dimensions
             if (rect.width === 0 || rect.height === 0) {
                 setTimeout(initCanvas, 50);
                 return;
             }
-            
+
             canvas.width = rect.width;
             canvas.height = rect.height;
 
@@ -3808,7 +3915,7 @@ window.app = {
             ctx.globalCompositeOperation = 'source-over';
             ctx.fillStyle = data.overlayColor || '#cbd5e1';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
+
             // Add gradient
             const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
             gradient.addColorStop(0, 'rgba(255,255,255,0.15)');

@@ -396,13 +396,16 @@ const app = {
         }
     },
 
-    // Preview Control
+    // Preview Control - Navigates the preview frame to the current editing context
     scrollPreviewToCurrentPage() {
         const step = this.wizardSteps[this.currentStep];
         if (!step) return;
 
+        // Determine the best index to show in preview
         const targetIdx = step.previewPageIndex !== undefined ? step.previewPageIndex : step.pageIndex;
+
         if (targetIdx !== undefined) {
+            console.log('[App] Auto-navigating preview to page:', targetIdx);
             this.sendMessageToPreview({
                 type: 'NAVIGATE_TO_PAGE',
                 pageIndex: targetIdx
@@ -445,15 +448,6 @@ const app = {
         window.open("../index.html?preview=full", "_blank");
     },
 
-    scrollPreviewToCurrentPage() {
-        const step = this.wizardSteps[this.currentStep];
-        if (step && typeof step.previewPageIndex === 'number') {
-            const idx = step.previewPageIndex >= 0 ? step.previewPageIndex : 0;
-            state.syncToPreview(idx);
-        } else {
-            state.syncToPreview(0);
-        }
-    },
 
     closePreview() {
         const modal = document.getElementById('previewModal');

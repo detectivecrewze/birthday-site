@@ -36,39 +36,82 @@
         }
     </script>
     <style>
-        /* Surgical Precision SVG Pin */
-        .map-pin-wrapper {
+        /* Precise Modern Map Pin */
+        .map-pin-container {
+            position: relative;
+            width: 40px;
+            height: 52px;
+            transform-origin: bottom center;
+            filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
+        }
+
+        /* The Pulse Ring - Exactly at the coordinate */
+        .map-pin-pulse {
+            position: absolute;
+            bottom: 0px;
+            left: 50%;
+            width: 20px;
+            height: 8px;
+            background: rgba(239, 68, 68, 0.4);
+            border-radius: 50%;
+            transform: translate(-50%, 50%) scale(0);
+            animation: pinPulse 2s infinite;
+            z-index: -1;
+        }
+
+        /* Visual Pin Body */
+        .map-pin-body {
             width: 40px;
             height: 52px;
             position: relative;
-            animation: pinEntrance 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            z-index: 2;
+            animation: pinDrop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
         }
 
-        .map-pin-svg {
-            display: block;
-            width: 40px;
-            height: 52px;
-            filter: drop-shadow(0 4px 5px rgba(0, 0, 0, 0.3));
+        /* Precision Tip Marker */
+        .map-precision-dot {
+            position: absolute;
+            bottom: -2px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 4px;
+            background: #ef4444;
+            border-radius: 50%;
+            border: 1px solid white;
+            z-index: 3;
+            box-shadow: 0 0 5px rgba(239, 68, 68, 0.8);
         }
 
-        @keyframes pinEntrance {
+        @keyframes pinDrop {
             0% {
-                transform: translateY(-10px);
+                transform: translateY(-20px) scale(0.8);
                 opacity: 0;
             }
 
             100% {
-                transform: translateY(0);
+                transform: translateY(0) scale(1);
                 opacity: 1;
             }
         }
 
-        /* Essential Leaflet Reset for absolute precision */
-        .leaflet-marker-icon {
+        @keyframes pinPulse {
+            0% {
+                transform: translate(-50%, 50%) scale(0.5);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translate(-50%, 50%) scale(2.5);
+                opacity: 0;
+            }
+        }
+
+        /* Ensure Leaflet's native positioning works correctly */
+        .leaflet-marker-icon.map-pin-div-icon {
             background: none !important;
             border: none !important;
-            margin-left: 0 !important;
-            margin-top: 0 !important;
+            overflow: visible !important;
         }
     </style>
 </head>
@@ -250,15 +293,27 @@
 
             <!-- 2. Search & Tabs (Fixed) -->
             <div class="px-5 sm:px-7 py-4 sm:py-6 bg-slate-50 border-b space-y-4 shrink-0">
-                <div class="flex p-1 bg-slate-200/50 rounded-xl gap-1 max-w-sm">
-                    <button id="tabSearch" onclick="mapPicker.switchTab('search')"
-                        class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all bg-white text-indigo-600 shadow-sm border border-slate-100">
-                        <span class="material-symbols-outlined text-base">search</span> Search
-                    </button>
-                    <button id="tabPasteLink" onclick="mapPicker.switchTab('paste')"
-                        class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all text-slate-500 hover:text-slate-700">
-                        <span class="material-symbols-outlined text-base">link</span> Link
-                    </button>
+                <div class="flex items-center justify-between gap-4">
+                    <div class="flex p-1 bg-slate-200/50 rounded-xl gap-1 w-48 shrink-0">
+                        <button id="tabSearch" onclick="mapPicker.switchTab('search')"
+                            class="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all bg-white text-indigo-600 shadow-sm border border-slate-100">
+                            Search
+                        </button>
+                        <button id="tabPasteLink" onclick="mapPicker.switchTab('paste')"
+                            class="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all text-slate-500 hover:text-slate-700">
+                            Link
+                        </button>
+                    </div>
+
+                    <!-- Interaction Tip Moved Here -->
+                    <div class="flex items-center gap-2 text-indigo-500 animate-pulse">
+                        <span class="material-symbols-outlined text-base">drag_pan</span>
+                        <div class="flex flex-col">
+                            <span class="text-[9px] font-black uppercase tracking-widest leading-none">Pro Tip</span>
+                            <span class="text-[8px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Drag pin
+                                to reposition</span>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="relative">
@@ -289,8 +344,9 @@
             </div>
 
             <!-- 3. Interactive Map (Flexible) -->
-            <div class="flex-1 relative bg-slate-100 min-h-0 overflow-hidden">
+            <div class="flex-1 relative bg-slate-100 min-h-0 overflow-hidden group/map">
                 <div id="leafletPickerContainer" class="absolute inset-0"></div>
+
                 <!-- Precision Crosshair -->
                 <div class="absolute inset-0 pointer-events-none flex items-center justify-center z-[1000] opacity-30">
                     <div

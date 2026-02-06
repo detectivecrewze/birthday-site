@@ -227,7 +227,7 @@ body {
 
 /* Preview Section */
 .wizard-preview {
-    width: 420px;
+    width: 380px;
     background: #f8fafc;
     border-left: 1px solid #f1f5f9;
     padding: 1rem;
@@ -255,7 +255,7 @@ body {
 /* Phone Frame */
 .preview-frame {
     width: 100%;
-    max-width: 360px;
+    max-width: 320px;
     height: 100%;
     /* Fill the available space in wizard-main */
     background: #0f172a;

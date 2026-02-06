@@ -174,19 +174,19 @@
         (function () {
             const urlParams = new URLSearchParams(window.location.search);
             const siteId = urlParams.get('to');
-            
+
             if (siteId) {
                 console.log('[Published] Loading config for site:', siteId);
-                
+
                 // Mark as published site for loader styling
                 document.documentElement.setAttribute('data-published-site', 'true');
-                
+
                 // Show loading state on preloader
                 const originalPreloaderText = document.querySelector('#preloader p');
                 if (originalPreloaderText) {
                     originalPreloaderText.textContent = 'Loading Your Memory Box...';
                 }
-                
+
                 // Fetch config from Cloudflare Worker
                 fetch('https://valentine-upload.aldoramadhan16.workers.dev/get-config?id=' + encodeURIComponent(siteId))
                     .then(response => {
@@ -198,7 +198,7 @@
                     .then(config => {
                         console.log('[Published] Config loaded successfully');
                         window.CONFIG = config;
-                        
+
                         // Update preloader text
                         if (originalPreloaderText) {
                             originalPreloaderText.textContent = 'Unlocking Memories...';
@@ -206,7 +206,7 @@
                     })
                     .catch(error => {
                         console.error('[Published] Failed to load config:', error);
-                        
+
                         // Show error on preloader
                         const preloader = document.getElementById('preloader');
                         if (preloader) {
@@ -220,7 +220,7 @@
                                 </div>
                             `;
                         }
-                        
+
                         // Allow fallback to default data.js after 3 seconds
                         setTimeout(() => {
                             window.CONFIG = null; // Will trigger data.js fallback
@@ -240,42 +240,33 @@
 
             // Listen for config updates from admin preview
             window.addEventListener('message', function (e) {
-                console.log('[Preview] Received message:', e.data);
+                if (!e.data || !e.data.type) return;
 
-                if (e.data && e.data.type === 'REINIT_CONFIG') {
-                    console.log('[Preview] Received config update from admin, targetPage:', e.data.targetPageIndex);
+                console.log('[Preview] Message received:', e.data.type);
 
-                    // Update the global CONFIG
-                    if (e.data.config) {
-                        console.log('[Preview] Current CONFIG pages:', window.CONFIG?.pages?.length);
-                        window.CONFIG = e.data.config;
-                        console.log('[Preview] New CONFIG pages:', window.CONFIG.pages.length);
-                        console.log('[Preview] First page data:', window.CONFIG.pages[0]);
+                // Option 1: Full State Re-initialization
+                if (e.data.type === 'REINIT_CONFIG' && e.data.config) {
+                    window.CONFIG = e.data.config;
+                    if (window.app && typeof window.app.liveUpdate === 'function') {
+                        window.app.liveUpdate(e.data.config);
+                    }
 
-                        // Trigger re-render using app.liveUpdate
-                        if (window.app && typeof window.app.liveUpdate === 'function') {
-                            console.log('[Preview] Calling liveUpdate...');
-                            window.app.liveUpdate(e.data.config);
-
-                            // Navigate to target page if specified
-                            if (typeof e.data.targetPageIndex === 'number' && e.data.targetPageIndex >= 0) {
-                                const targetIdx = e.data.targetPageIndex;
-                                console.log('[Preview] Will navigate to page', targetIdx);
-                                setTimeout(() => {
-                                    console.log('[Preview] Executing goToPage(', targetIdx, ')');
-                                    if (window.app && typeof window.app.goToPage === 'function') {
-                                        window.app.goToPage(targetIdx);
-                                        console.log('[Preview] goToPage executed successfully');
-                                    } else {
-                                        console.log('[Preview] app.goToPage not available!');
-                                    }
-                                }, 200);
-                            } else {
-                                console.log('[Preview] No valid targetPageIndex specified:', e.data.targetPageIndex);
+                    // Optional navigation within the same message
+                    if (typeof e.data.targetPageIndex === 'number') {
+                        console.log('[Preview] Initial target page detected:', e.data.targetPageIndex);
+                        setTimeout(() => {
+                            if (window.app && typeof window.app.goToPage === 'function') {
+                                window.app.goToPage(e.data.targetPageIndex, true);
                             }
-                        } else {
-                            console.log('[Preview] app.liveUpdate not available yet');
-                        }
+                        }, 200);
+                    }
+                }
+
+                // Option 2: Pure Navigation (Faster)
+                if (e.data.type === 'NAVIGATE_TO_PAGE' && typeof e.data.pageIndex === 'number') {
+                    console.log('[Preview] Navigating to page:', e.data.pageIndex);
+                    if (window.app && typeof window.app.goToPage === 'function') {
+                        window.app.goToPage(e.data.pageIndex, true);
                     }
                 }
             });

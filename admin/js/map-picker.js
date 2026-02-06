@@ -165,20 +165,24 @@ const mapPicker = {
     setMarker(latlng) {
         this.selectedLatLng = latlng;
 
-        // Surgical Precision Pin Definition
+        // Surgical Precision Pin Definition (Premium Red)
         const redPinIcon = L.divIcon({
             className: 'map-pin-div-icon',
             html: `
-                <div class="map-pin-wrapper">
-                    <svg class="map-pin-svg" viewBox="0 0 40 52" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M20 52C20 52 40 38.2 40 20C40 8.9543 31.0457 0 20 0C8.9543 0 0 8.9543 0 20C0 38.2 20 52 20 52Z" fill="#EF4444"/>
-                        <circle cx="20" cy="20" r="10" fill="white"/>
-                        <circle cx="20" cy="20" r="4" fill="#EF4444"/>
-                    </svg>
+                <div class="map-pin-container">
+                    <div class="map-pin-pulse"></div>
+                    <div class="map-precision-dot"></div>
+                    <div class="map-pin-body">
+                        <svg width="40" height="52" viewBox="0 0 40 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M20 52C20 52 40 38 40 20C40 8.95 31.05 0 20 0C8.95 0 0 8.95 0 20C0 38 20 52 20 52Z" fill="#EF4444"/>
+                            <circle cx="20" cy="20" r="11" fill="white"/>
+                            <circle cx="20" cy="20" r="5" fill="#EF4444"/>
+                        </svg>
+                    </div>
                 </div>
             `,
             iconSize: [40, 52],
-            iconAnchor: [20, 52],
+            iconAnchor: [20, 52], // This is the single most important point for precision
             popupAnchor: [0, -52]
         });
 

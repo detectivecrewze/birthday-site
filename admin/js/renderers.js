@@ -297,6 +297,15 @@ const renderers = {
                         ${this.renderField({ key: 'musicTrack', label: 'Background Music', type: 'file' }, page, pageIndex)}
                     </div>
                 </div>
+                <div class="mt-8 p-5 bg-indigo-50/50 rounded-2xl border border-indigo-100 flex gap-4 items-start">
+                    <div class="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center shrink-0">
+                        <span class="material-symbols-outlined text-indigo-600">lightbulb</span>
+                    </div>
+                    <div>
+                        <h4 class="text-[10px] font-black uppercase tracking-widest text-indigo-900/40 mb-1">Pro Tip</h4>
+                        <p class="text-[11px] text-indigo-900/60 leading-relaxed font-medium">Use <code>&lt;span&gt;teks&lt;/span&gt;</code> in the title to give it a beautiful color highlight effect!</p>
+                    </div>
+                </div>
             </div>
         `;
     },
@@ -324,6 +333,15 @@ const renderers = {
                             ${this.renderField({ key: 'labelMinutes', label: 'Minutes Label', type: 'text' }, page, pageIndex)}
                             ${this.renderField({ key: 'labelSeconds', label: 'Seconds Label', type: 'text' }, page, pageIndex)}
                         </div>
+                    </div>
+                </div>
+                <div class="mt-8 p-5 bg-indigo-50/50 rounded-2xl border border-indigo-100 flex gap-4 items-start">
+                    <div class="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center shrink-0">
+                        <span class="material-symbols-outlined text-indigo-600">hourglass_empty</span>
+                    </div>
+                    <div>
+                        <h4 class="text-[10px] font-black uppercase tracking-widest text-indigo-900/40 mb-1">Pro Tip</h4>
+                        <p class="text-[11px] text-indigo-900/60 leading-relaxed font-medium">Ensure the birth date is correct! This page calculates the exact age down to the second for a powerful emotional impact.</p>
                     </div>
                 </div>
             </div>
@@ -355,6 +373,15 @@ const renderers = {
                          ${this.renderField({ key: 'articles', label: 'Manage Stories', type: 'list', itemType: 'article' }, page, pageIndex)}
                     </div>
                 </div>
+                <div class="mt-8 p-5 bg-emerald-50/50 rounded-2xl border border-emerald-100 flex gap-4 items-start">
+                    <div class="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center shrink-0">
+                        <span class="material-symbols-outlined text-emerald-600">auto_awesome</span>
+                    </div>
+                    <div>
+                        <h4 class="text-[10px] font-black uppercase tracking-widest text-emerald-900/40 mb-1">Pro Tip</h4>
+                        <p class="text-[11px] text-emerald-900/60 leading-relaxed font-medium">Add 3 side articles to make the newspaper look authentic and full of life!</p>
+                    </div>
+                </div>
             </div>
         `;
     },
@@ -368,6 +395,15 @@ const renderers = {
                     <div class="field-group-title"><span class="material-symbols-outlined text-xs">collections</span> Memory Gallery</div>
                     ${this.renderField({ key: 'photos', label: 'Manage Photos', type: 'list', itemType: 'photo' }, page, pageIndex)}
                 </div>
+                <div class="mt-8 p-5 bg-indigo-50/50 rounded-2xl border border-indigo-100 flex gap-4 items-start">
+                    <div class="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center shrink-0">
+                        <span class="material-symbols-outlined text-indigo-600">auto_awesome</span>
+                    </div>
+                    <div>
+                        <h4 class="text-[10px] font-black uppercase tracking-widest text-indigo-900/40 mb-1">Pro Tip</h4>
+                        <p class="text-[11px] text-indigo-900/60 leading-relaxed font-medium">Try "Smart Upload"! Selecting photos from your phone gallery will automatically extract the date for each polaroid.</p>
+                    </div>
+                </div>
             </div>
         `;
     },
@@ -380,6 +416,15 @@ const renderers = {
                 <div class="field-group-card">
                     <div class="field-group-title"><span class="material-symbols-outlined text-xs">pin_drop</span> Memory Pins</div>
                     ${this.renderField({ key: 'pins', label: 'Manage Locations', type: 'list', itemType: 'pin' }, page, pageIndex)}
+                </div>
+                <div class="mt-8 p-5 bg-indigo-50/50 rounded-2xl border border-indigo-100 flex gap-4 items-start">
+                    <div class="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center shrink-0">
+                        <span class="material-symbols-outlined text-indigo-600">explore</span>
+                    </div>
+                    <div>
+                        <h4 class="text-[10px] font-black uppercase tracking-widest text-indigo-900/40 mb-1">Pro Tip</h4>
+                        <p class="text-[11px] text-indigo-900/60 leading-relaxed font-medium">Smart memory pins detect GPS coordinates from your smartphone photos. No need to search for every location manually!</p>
+                    </div>
                 </div>
 
             </div>
@@ -409,6 +454,15 @@ const renderers = {
                         <div class="mt-6">
                             ${this.renderField({ key: 'finishMessage', label: 'Reveal Message', type: 'text' }, page, pageIndex)}
                         </div>
+                    </div>
+                </div>
+                <div class="mt-8 p-5 bg-slate-100 rounded-2xl border border-slate-200 flex gap-4 items-start">
+                    <div class="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center shrink-0">
+                        <span class="material-symbols-outlined text-slate-600">info</span>
+                    </div>
+                    <div>
+                        <h4 class="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Pro Tip</h4>
+                        <p class="text-[11px] text-slate-600 leading-relaxed font-medium">Try matching the coating color with your background for a seamless "hidden" look before the user starts scratching!</p>
                     </div>
                 </div>
             </div>
@@ -441,6 +495,15 @@ const renderers = {
                     <div class="field-group-title"><span class="material-symbols-outlined text-xs">history_edu</span> Wax Seal</div>
                     ${this.renderField({ key: 'inisial', label: 'Inisial Stamp (1 Letter)', type: 'text' }, page, pageIndex)}
                 </div>
+                <div class="mt-8 p-5 bg-rose-50/50 rounded-2xl border border-rose-100 flex gap-4 items-start">
+                    <div class="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center shrink-0">
+                        <span class="material-symbols-outlined text-rose-600">history_edu</span>
+                    </div>
+                    <div>
+                        <h4 class="text-[10px] font-black uppercase tracking-widest text-rose-900/40 mb-1">Pro Tip</h4>
+                        <p class="text-[11px] text-rose-900/60 leading-relaxed font-medium">The wax seal initial adds a personal touch. Usually, it's the first letter of their name!</p>
+                    </div>
+                </div>
             </div>
         `;
     },
@@ -453,6 +516,15 @@ const renderers = {
                 <div class="field-group-card">
                     ${this.renderField({ key: 'title', label: 'Message Heading', type: 'text' }, page, pageIndex)}
                     ${this.renderField({ key: 'content', label: 'Body Text', type: 'textarea' }, page, pageIndex)}
+                </div>
+                <div class="mt-8 p-5 bg-indigo-50/50 rounded-2xl border border-indigo-100 flex gap-4 items-start">
+                    <div class="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center shrink-0">
+                        <span class="material-symbols-outlined text-indigo-600">chat_bubble</span>
+                    </div>
+                    <div>
+                        <h4 class="text-[10px] font-black uppercase tracking-widest text-indigo-900/40 mb-1">Pro Tip</h4>
+                        <p class="text-[11px] text-indigo-900/60 leading-relaxed font-medium">Use this page for simple, punchy quotes or quick transition messages between bigger chapters.</p>
+                    </div>
                 </div>
             </div>
         `;
@@ -783,7 +855,7 @@ const renderers = {
     renderFinishStep() {
         const config = state.getConfig();
         const recipientName = config.metadata?.customerName || '';
-        
+
         return `
             <div class="section-header mb-8">
                 <div class="section-icon bg-green-100 text-green-600">
