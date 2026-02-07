@@ -37,6 +37,30 @@ const state = {
         if (this.configData.metadata.senderName === undefined) this.configData.metadata.senderName = "";
 
         console.log('[State] Initialized with', this.configData.pages.length, 'pages');
+
+        // Migration: Ensure Music Player is at index 1 by default (after Memory Box)
+        this.runReorderMigration();
+    },
+
+    // One-time migration to fix page order for existing users
+    runReorderMigration() {
+        const pages = this.configData.pages;
+        if (pages.length < 2) return;
+
+        // Find music player index
+        const musicIdx = pages.findIndex(p => p.type === 'music-player');
+
+        // If it exists but is NOT at index 1, and index 0 is memory-box, move it
+        if (musicIdx !== -1 && musicIdx !== 1 && pages[0].type === 'memory-box') {
+            const hasMovedBefore = localStorage.getItem('migration_music_order_v1');
+            if (!hasMovedBefore) {
+                console.log('[State] Migration: Moving music-player to index 1');
+                const [player] = pages.splice(musicIdx, 1);
+                pages.splice(1, 0, player);
+                this.save();
+                localStorage.setItem('migration_music_order_v1', 'true');
+            }
+        }
     },
 
     // Load data from localStorage or existing CONFIG

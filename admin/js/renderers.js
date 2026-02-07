@@ -251,6 +251,7 @@ const renderers = {
         switch (page.type) {
             case 'memory-box': return this.renderMemoryBoxEditor(page, pageIndex);
             case 'inside-box': return this.renderInsideBoxEditor(page, pageIndex);
+            case 'music-player': return this.renderMusicPlayerEditor(page, pageIndex);
             case 'lifetime-receipt': return this.renderReceiptEditor(page, pageIndex);
             case 'birthday-newspaper': return this.renderNewspaperEditor(page, pageIndex);
             case 'polaroid-stack': return this.renderPolaroidEditor(page, pageIndex);
@@ -292,10 +293,6 @@ const renderers = {
                             ${this.renderField({ key: 'letterSign', label: 'Signature', type: 'text' }, page, pageIndex)}
                         </div>
                     </div>
-                    <div class="field-group-card bg-indigo-50/5 border-indigo-100">
-                        <div class="field-group-title text-indigo-600"><span class="material-symbols-outlined text-xs">music_note</span> Atmosphere</div>
-                        ${this.renderField({ key: 'musicTrack', label: 'Background Music', type: 'file' }, page, pageIndex)}
-                    </div>
                 </div>
                 <div class="mt-8 p-5 bg-indigo-50/50 rounded-2xl border border-indigo-100 flex gap-4 items-start">
                     <div class="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center shrink-0">
@@ -304,6 +301,77 @@ const renderers = {
                     <div>
                         <h4 class="text-[10px] font-black uppercase tracking-widest text-indigo-900/40 mb-1">Pro Tip</h4>
                         <p class="text-[11px] text-indigo-900/60 leading-relaxed font-medium">Use <code>&lt;span&gt;teks&lt;/span&gt;</code> in the title to give it a beautiful color highlight effect!</p>
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+
+    // 1b. Music Player Editor
+    renderMusicPlayerEditor(page, pageIndex) {
+        // Ensure tracks array exists with at least one default track
+        if (!page.tracks || page.tracks.length === 0) {
+            page.tracks = [{ songTitle: '', artist: '', audioUrl: '' }];
+        }
+        const tracks = page.tracks;
+
+        return `
+            <div class="animate-in">
+                ${this.renderPageHeader('album', 'Music Player', 'A vintage vinyl music box experience. Add up to 3 songs!', pageIndex)}
+                <div class="space-y-6">
+                    <div class="field-group-card bg-purple-50/5 border-purple-100">
+                        <div class="field-group-title text-purple-600"><span class="material-symbols-outlined text-xs">queue_music</span> Your Playlist (${tracks.length}/3)</div>
+                        
+                        <div class="space-y-4" id="tracks-list-${pageIndex}">
+                            ${tracks.map((track, trackIndex) => `
+                                <div class="track-item p-4 bg-white rounded-xl border border-gray-200 shadow-sm" data-track-index="${trackIndex}">
+                                    <div class="flex items-center gap-3 mb-3">
+                                        <div class="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center text-purple-600 font-bold">${trackIndex + 1}</div>
+                                        <div class="flex-1">
+                                            <input type="text" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm font-medium" 
+                                                placeholder="Song Title" 
+                                                value="${utils.escapeHtml(track.songTitle || '')}"
+                                                onchange="window.adminRenderers.updateTrack(${pageIndex}, ${trackIndex}, 'songTitle', this.value)">
+                                        </div>
+                                        ${tracks.length > 1 ? `
+                                            <button type="button" onclick="window.adminRenderers.removeTrack(${pageIndex}, ${trackIndex})" 
+                                                class="w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 flex items-center justify-center transition-colors">
+                                                <span class="material-symbols-outlined text-lg">close</span>
+                                            </button>
+                                        ` : ''}
+                                    </div>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <input type="text" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" 
+                                            placeholder="Artist Name" 
+                                            value="${utils.escapeHtml(track.artist || '')}"
+                                            onchange="window.adminRenderers.updateTrack(${pageIndex}, ${trackIndex}, 'artist', this.value)">
+                                        <div class="flex gap-2">
+                                            <input type="text" class="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm" 
+                                                placeholder="Audio URL" 
+                                                value="${utils.escapeHtml(track.audioUrl || '')}"
+                                                onchange="window.adminRenderers.updateTrack(${pageIndex}, ${trackIndex}, 'audioUrl', this.value)">
+                                            <label class="px-3 py-2 bg-gray-800 text-white rounded-lg text-xs font-medium cursor-pointer hover:bg-gray-700 flex items-center gap-1 whitespace-nowrap">
+                                                <span class="material-symbols-outlined text-sm">cloud_upload</span>
+                                                <input type="file" accept="audio/*" class="hidden" onchange="window.adminRenderers.uploadTrackAudio(${pageIndex}, ${trackIndex}, this)">
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                        
+                        ${tracks.length < 3 ? `
+                            <button type="button" onclick="window.adminRenderers.addTrack(${pageIndex})" 
+                                class="mt-4 w-full py-3 border-2 border-dashed border-purple-200 rounded-xl text-purple-600 font-medium hover:bg-purple-50 transition-colors flex items-center justify-center gap-2">
+                                <span class="material-symbols-outlined">add</span> Add Another Song
+                            </button>
+                        ` : `
+                            <div class="mt-4 py-3 text-center text-gray-500 text-sm">Maximum 3 songs reached</div>
+                        `}
+                    </div>
+                    <div class="field-group-card">
+                        <div class="field-group-title"><span class="material-symbols-outlined text-xs">smart_button</span> Button</div>
+                        ${this.renderField({ key: 'buttonText', label: 'Continue Button Text', type: 'text' }, page, pageIndex)}
                     </div>
                 </div>
             </div>
@@ -1051,3 +1119,61 @@ const renderers = {
 };
 
 window.renderers = renderers;
+
+// Track management functions for Music Player
+window.adminRenderers = {
+    addTrack(pageIndex) {
+        const page = state.configData.pages[pageIndex];
+        if (!page.tracks) page.tracks = [];
+        if (page.tracks.length >= 3) return;
+
+        page.tracks.push({ songTitle: "", artist: "", audioUrl: "" });
+        state.save();
+        app.renderCurrentStep();
+        state.syncPreview();
+    },
+
+    removeTrack(pageIndex, trackIndex) {
+        const page = state.configData.pages[pageIndex];
+        if (!page.tracks || page.tracks.length <= 1) return;
+
+        page.tracks.splice(trackIndex, 1);
+        state.save();
+        app.renderCurrentStep();
+        state.syncPreview();
+    },
+
+    updateTrack(pageIndex, trackIndex, field, value) {
+        const page = state.configData.pages[pageIndex];
+        if (!page.tracks || !page.tracks[trackIndex]) return;
+
+        page.tracks[trackIndex][field] = value;
+        state.save();
+        state.syncPreview();
+    },
+
+    async uploadTrackAudio(pageIndex, trackIndex, input) {
+        const file = input.files[0];
+        if (!file) return;
+
+        // Show loading state
+        const label = input.parentElement;
+        const originalHtml = label.innerHTML;
+        label.innerHTML = '<span class="material-symbols-outlined text-sm animate-spin">progress_activity</span>';
+
+        try {
+            const url = await utils.handleFileUpload(file);
+            this.updateTrack(pageIndex, trackIndex, 'audioUrl', url);
+            app.renderCurrentStep();
+        } catch (e) {
+            console.error('Upload failed:', e);
+            alert('Upload failed. Please try again.');
+        }
+
+        label.innerHTML = originalHtml;
+    },
+
+    escapeHtml(text) {
+        return utils.escapeHtml(text);
+    }
+};

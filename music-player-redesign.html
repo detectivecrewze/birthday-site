@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music Player Redesign Preview</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500&family=Caveat:wght@400;500;600&family=Crimson+Pro:wght@300;400;500&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    
+    <!-- Material Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Tailwind Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'ribbon-red': '#b33939',
+                        'vintage-ink': '#2d2926',
+                        'paper-cream': '#f5f1e8',
+                    },
+                    fontFamily: {
+                        'serif': ['"Cormorant Garamond"', 'Georgia', 'serif'],
+                        'ink': ['Caveat', 'cursive'],
+                        'body': ['"Crimson Pro"', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        /* ==========================================
+           BACKGROUND - Matching existing pages
+           ========================================== */
+        .inside-box-container {
+            perspective: 1000px;
+            background-color: #e6dec1;
+            background-image:
+                radial-gradient(circle at center, transparent 0%, rgba(0, 0, 0, 0.1) 100%),
+                url('assets/textures/pinstriped-suit.png');
+            position: relative;
+        }
+
+        .silk-tissue {
+            position: absolute;
+            inset: -10%;
+            background-image:
+                radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                url('assets/textures/paper-fibers.png');
+            background-color: #e8e4d8;
+            transform: rotate(-2deg) skewX(2deg);
+            box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.2), 30px 30px 60px rgba(0, 0, 0, 0.3);
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .crumpled-effect {
+            position: fixed;
+            inset: 0;
+            opacity: 0.15;
+            pointer-events: none;
+            background-image: url('assets/textures/crumpled-paper.png');
+        }
+
+        /* ==========================================
+           ENHANCED TITLE SECTION
+           ========================================== */
+        .title-section {
+            position: relative;
+            margin-bottom: 2rem;
+        }
+
+        .title-ornament {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .title-line {
+            width: 60px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(179, 57, 57, 0.4), transparent);
+            position: relative;
+        }
+
+        .title-line::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 6px;
+            height: 6px;
+            background: rgba(179, 57, 57, 0.3);
+            border-radius: 50%;
+        }
+
+        .title-diamond {
+            color: #b33939;
+            opacity: 0.5;
+            font-size: 14px;
+        }
+
+        .main-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(2.25rem, 6vw, 3.5rem);
+            font-weight: 300;
+            font-style: italic;
+            color: #2d2926;
+            letter-spacing: 0.02em;
+            line-height: 1.1;
+            text-align: center;
+        }
+
+        .main-title span {
+            font-weight: 500;
+            color: #b33939;
+            font-style: normal;
+            position: relative;
+        }
+
+        .main-title span::after {
+            content: '';
+            position: absolute;
+            bottom: 2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(179, 57, 57, 0.3), transparent);
+        }
+
+        .title-subtitle {
+            font-family: 'Caveat', cursive;
+            font-size: 1.1rem;
+            color: #2d2926;
+            opacity: 0.5;
+            text-align: center;
+            margin-top: 0.75rem;
+            letter-spacing: 0.03em;
+        }
+
+        .title-subtitle {
+            font-family: 'Caveat', cursive;
+            font-size: 1.25rem;
+            color: #2d2926;
+            opacity: 0.5;
+            text-align: center;
+            margin-top: 0.5rem;
+            letter-spacing: 0.05em;
+        }
+
+        /* ==========================================
+           MUSIC BOX CONTAINER (SMALLER)
+           ========================================== */
+        .music-box-container {
+            position: relative;
+            width: 85vw;
+            max-width: 360px;  /* Reduced from 420px */
+            perspective: 1000px;
+        }
+
+        /* Wooden Base - Smaller padding */
+        .music-box-base {
+            position: relative;
+            background: linear-gradient(145deg, 
+                #3d3229 0%, 
+                #2d2420 30%, 
+                #3d3229 50%,
+                #2d2420 70%,
+                #3d3229 100%);
+            border-radius: 16px;  /* Reduced from 20px */
+            padding: 18px 18px 22px 18px;  /* Reduced from 24px */
+            box-shadow: 
+                0 25px 50px -10px rgba(0, 0, 0, 0.4),
+                0 12px 20px -5px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1),
+                inset 0 -3px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .music-box-base::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 16px;
+            background: 
+                repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(0, 0, 0, 0.03) 2px, rgba(0, 0, 0, 0.03) 4px),
+                repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(139, 90, 43, 0.05) 3px, rgba(139, 90, 43, 0.05) 6px);
+            pointer-events: none;
+        }
+
+        .music-box-base::after {
+            content: '';
+            position: absolute;
+            inset: 6px;  /* Reduced from 8px */
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 10px;  /* Reduced from 12px */
+            pointer-events: none;
+        }
+
+        /* ==========================================
+           TRACK INFO (Below music box)
+           ========================================== */
+        .track-info-card {
+            position: absolute;
+            bottom: -55px;  /* Adjusted for smaller box */
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(145deg, 
+                rgba(255, 255, 255, 0.95) 0%, 
+                rgba(245, 241, 232, 0.9) 100%);
+            padding: 10px 20px;  /* Reduced from 12px 24px */
+            border-radius: 8px;
+            box-shadow: 
+                0 6px 20px -5px rgba(0, 0, 0, 0.15),
+                0 2px 6px -2px rgba(0, 0, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(179, 57, 57, 0.15);
+            text-align: center;
+            min-width: 160px;  /* Reduced from 180px */
+            z-index: 20;
+            backdrop-filter: blur(10px);
+        }
+
+        .track-info-card::before {
+            content: '';
+            position: absolute;
+            top: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-bottom: 5px solid rgba(255, 255, 255, 0.95);
+        }
+
+        .track-song-title {
+            font-family: 'Caveat', cursive;
+            font-size: 20px;  /* Reduced from 22px */
+            color: #2d2926;
+            line-height: 1.2;
+            margin-bottom: 1px;
+        }
+
+        .track-artist {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 9px;  /* Reduced from 10px */
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: #b33939;
+            opacity: 0.8;
+        }
+
+        /* Side labels - adjusted */
+        .track-side-label {
+            position: absolute;
+            left: -30px;  /* Reduced from -35px */
+            top: 50%;
+            transform: translateY(-50%) rotate(-90deg);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 9px;  /* Reduced from 10px */
+            letter-spacing: 0.3em;
+            color: rgba(212, 175, 55, 0.5);
+            text-transform: uppercase;
+            pointer-events: none;
+        }
+
+        .track-catalog-number {
+            position: absolute;
+            right: -25px;  /* Reduced from -30px */
+            bottom: 50px;  /* Adjusted */
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 8px;  /* Reduced from 9px */
+            letter-spacing: 0.15em;
+            color: rgba(212, 175, 55, 0.4);
+            transform: rotate(90deg);
+            pointer-events: none;
+        }
+
+        /* ==========================================
+           VINYL RECORD (SMALLER)
+           ========================================== */
+        .music-box-interior {
+            position: relative;
+            background: linear-gradient(145deg, #1a1a1a 0%, #0d0d0d 50%, #151515 100%);
+            border-radius: 10px;  /* Reduced from 12px */
+            padding: 24px 18px 32px 18px;  /* Reduced from 32px 24px 40px */
+            box-shadow: inset 0 4px 15px rgba(0, 0, 0, 0.8), inset 0 -2px 5px rgba(255, 255, 255, 0.05);
+        }
+
+        .music-box-interior::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 10px;
+            background: 
+                radial-gradient(ellipse at 30% 20%, rgba(179, 57, 57, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 70% 80%, rgba(179, 57, 57, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .vinyl-record {
+            position: relative;
+            width: 200px;  /* Reduced from 240px */
+            height: 200px;  /* Reduced from 240px */
+            margin: 0 auto;
+            border-radius: 50%;
+            background: 
+                radial-gradient(circle at center, #f5f1e8 0%, #f5f1e8 22%, transparent 22.5%),
+                repeating-radial-gradient(circle at center, #0a0a0a 0px, #0a0a0a 1px, #141414 1px, #141414 2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+            cursor: pointer;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .vinyl-record:hover {
+            transform: scale(1.02);
+        }
+
+        .vinyl-record.playing {
+            animation: vinylSpin 1.8s linear infinite;
+        }
+
+        @keyframes vinylSpin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .vinyl-record::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 40%, transparent 60%, rgba(255, 255, 255, 0.05) 100%);
+            pointer-events: none;
+        }
+
+        .vinyl-label {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 84px;  /* Reduced from 100px */
+            height: 84px;  /* Reduced from 100px */
+            border-radius: 50%;
+            background: linear-gradient(145deg, #f5f1e8 0%, #e8e4d9 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1), 0 1px 0 rgba(255, 255, 255, 0.5);
+        }
+
+        .vinyl-label::before {
+            content: '';
+            position: absolute;
+            inset: 5px;  /* Reduced from 6px */
+            border-radius: 50%;
+            border: 1px solid rgba(179, 57, 57, 0.3);
+        }
+
+        .vinyl-label::after {
+            content: '';
+            position: absolute;
+            inset: 10px;  /* Reduced from 12px */
+            border-radius: 50%;
+            border: 1px solid rgba(45, 41, 38, 0.15);
+        }
+
+        .vinyl-label-text {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 8px;  /* Reduced from 9px */
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: #b33939;
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        .vinyl-label-title {
+            font-family: 'Caveat', cursive;
+            font-size: 14px;  /* Reduced from 16px */
+            color: #2d2926;
+            margin-top: 2px;
+            transform: rotate(-2deg);
+        }
+
+        .vinyl-spindle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 7px;  /* Reduced from 8px */
+            height: 7px;  /* Reduced from 8px */
+            background: #0d0d0d;
+            border-radius: 50%;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.8);
+        }
+
+        /* ==========================================
+           TONE ARM (ADJUSTED)
+           ========================================== */
+        .tone-arm-container {
+            position: absolute;
+            top: 16px;  /* Reduced from 20px */
+            right: 24px;  /* Reduced from 30px */
+            width: 50px;  /* Reduced from 60px */
+            height: 115px;  /* Reduced from 140px */
+            z-index: 10;
+        }
+
+        .tone-arm-pivot {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 20px;  /* Reduced from 24px */
+            height: 20px;  /* Reduced from 24px */
+            background: linear-gradient(145deg, #c9b896 0%, #a08b6d 50%, #8b7355 100%);
+            border-radius: 50%;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.3);
+        }
+
+        .tone-arm {
+            position: absolute;
+            top: 8px;  /* Reduced from 10px */
+            right: 8px;  /* Reduced from 10px */
+            width: 7px;  /* Reduced from 8px */
+            height: 85px;  /* Reduced from 100px */
+            background: linear-gradient(90deg, #a0a0a0 0%, #d0d0d0 30%, #e0e0e0 50%, #d0d0d0 70%, #a0a0a0 100%);
+            border-radius: 4px;
+            transform-origin: top center;
+            transform: rotate(-30deg);
+            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        .tone-arm.playing {
+            transform: rotate(15deg);
+        }
+
+        .tone-arm::after {
+            content: '';
+            position: absolute;
+            bottom: -7px;  /* Adjusted */
+            left: 50%;
+            transform: translateX(-50%);
+            width: 14px;  /* Reduced from 16px */
+            height: 17px;  /* Reduced from 20px */
+            background: linear-gradient(145deg, #2d2926, #1a1a1a);
+            border-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
+        }
+
+        /* ==========================================
+           CONTROLS (ADJUSTED)
+           ========================================== */
+        .control-panel {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;  /* Reduced from 24px */
+            margin-top: 16px;  /* Reduced from 20px */
+            padding-top: 14px;  /* Reduced from 16px */
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .play-button {
+            width: 52px;  /* Reduced from 60px */
+            height: 52px;  /* Reduced from 60px */
+            border-radius: 50%;
+            background: linear-gradient(145deg, #f5f1e8 0%, #e8e4d9 100%);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 5px 12px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.8), inset 0 -2px 5px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .play-button::before {
+            content: '';
+            position: absolute;
+            inset: 3px;  /* Reduced from 4px */
+            border-radius: 50%;
+            border: 1px solid rgba(179, 57, 57, 0.2);
+        }
+
+        .play-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 16px rgba(0, 0, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.8);
+        }
+
+        .play-button:active {
+            transform: translateY(0);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3), inset 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .play-button .icon-play, .play-button .icon-pause {
+            color: #b33939;
+            font-size: 22px;  /* Reduced from 26px */
+            transition: all 0.3s ease;
+        }
+
+        .play-button .icon-pause { display: none; }
+        .play-button.playing .icon-play { display: none; }
+        .play-button.playing .icon-pause { display: block; }
+
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 6px;  /* Reduced from 8px */
+        }
+
+        .volume-icon {
+            color: rgba(245, 241, 232, 0.6);
+            font-size: 16px;  /* Reduced from 18px */
+        }
+
+        .volume-slider {
+            width: 60px;  /* Reduced from 70px */
+            height: 3px;  /* Reduced from 4px */
+            -webkit-appearance: none;
+            appearance: none;
+            background: rgba(245, 241, 232, 0.2);
+            border-radius: 2px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px;  /* Reduced from 14px */
+            height: 12px;  /* Reduced from 14px */
+            background: linear-gradient(145deg, #f5f1e8, #e8e4d9);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Visualizer */
+        .visualizer {
+            position: absolute;
+            bottom: 14px;  /* Adjusted */
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: flex-end;
+            gap: 3px;
+            height: 18px;  /* Reduced from 20px */
+            opacity: 0.4;
+        }
+
+        .visualizer-bar {
+            width: 3px;
+            background: linear-gradient(to top, #b33939, transparent);
+            border-radius: 2px;
+            transition: height 0.2s ease;
+        }
+
+        .visualizer-bar:nth-child(1) { height: 7px; }
+        .visualizer-bar:nth-child(2) { height: 12px; }
+        .visualizer-bar:nth-child(3) { height: 9px; }
+        .visualizer-bar:nth-child(4) { height: 14px; }
+        .visualizer-bar:nth-child(5) { height: 5px; }
+
+        .music-box-container.playing .visualizer-bar {
+            animation: visualize 0.5s ease-in-out infinite alternate;
+        }
+
+        .music-box-container.playing .visualizer-bar:nth-child(1) { animation-delay: 0s; }
+        .music-box-container.playing .visualizer-bar:nth-child(2) { animation-delay: 0.1s; }
+        .music-box-container.playing .visualizer-bar:nth-child(3) { animation-delay: 0.2s; }
+        .music-box-container.playing .visualizer-bar:nth-child(4) { animation-delay: 0.15s; }
+        .music-box-container.playing .visualizer-bar:nth-child(5) { animation-delay: 0.05s; }
+
+        @keyframes visualize {
+            0% { height: 4px; opacity: 0.3; }
+            100% { height: 16px; opacity: 0.8; }
+        }
+
+        /* Arrow */
+        .music-box-arrow {
+            position: absolute;
+            top: 16px;  /* Adjusted */
+            right: -90px;  /* Adjusted */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            pointer-events: none;
+        }
+
+        .music-box-arrow-text {
+            font-family: 'Caveat', cursive;
+            font-size: 20px;  /* Reduced from 22px */
+            color: #2d2926;
+            opacity: 0.6;
+            transform: rotate(-5deg);
+            margin-bottom: 4px;
+        }
+
+        .music-box-arrow svg {
+            opacity: 0.4;
+            transform: rotate(-15deg);
+        }
+
+        /* Continue Button */
+        .music-continue-btn {
+            margin-top: 80px;  /* Reduced from 90px */
+            padding: 12px 32px;  /* Reduced from 14px 36px */
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.95) 0%, rgba(245, 241, 232, 0.9) 100%);
+            border: 1px solid rgba(179, 57, 57, 0.2);
+            border-radius: 30px;
+            font-family: 'Crimson Pro', serif;
+            font-size: 13px;  /* Reduced from 14px */
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: #2d2926;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 6px 20px -5px rgba(0, 0, 0, 0.15), 0 3px 8px -2px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            opacity: 0;
+            transform: translateY(20px);
+            pointer-events: none;
+        }
+
+        .music-continue-btn.visible {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        .music-continue-btn:hover {
+            background: rgba(255, 255, 255, 0.98);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 5px 10px -2px rgba(0, 0, 0, 0.1);
+            border-color: rgba(179, 57, 57, 0.35);
+        }
+
+        .music-continue-brand {
+            display: flex;
+            align-items: center;
+            gap: 6px;  /* Reduced from 8px */
+            margin-top: 14px;  /* Reduced from 16px */
+            color: #b33939;
+            opacity: 0.4;
+            transition: opacity 0.3s ease;
+        }
+
+        .music-continue-brand span {
+            font-size: 9px;  /* Reduced from 10px */
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .music-box-base { padding: 16px 14px 20px 14px; }
+            .music-box-interior { padding: 20px 16px 28px 16px; }
+            .vinyl-record { width: 170px; height: 170px; }  /* Further reduced for mobile */
+            .vinyl-label { width: 72px; height: 72px; }
+            .vinyl-label-text { font-size: 7px; }
+            .vinyl-label-title { font-size: 12px; }
+            .tone-arm-container { right: 18px; width: 45px; height: 100px; }
+            .tone-arm { height: 75px; }
+            .play-button { width: 48px; height: 48px; }
+            .play-button .icon-play, .play-button .icon-pause { font-size: 20px; }
+            .volume-slider { width: 50px; }
+            .music-box-arrow { display: none; }
+            
+            .title-ornament { gap: 0.75rem; }
+            .title-line { width: 40px; }
+            .main-title { font-size: 2rem; }
+            
+            .track-info-card {
+                min-width: 140px;
+                padding: 8px 14px;
+                bottom: -48px;
+            }
+            .track-song-title { font-size: 16px; }
+            .track-artist { font-size: 8px; }
+            .track-side-label, .track-catalog-number { display: none; }
+            
+            .music-continue-btn { margin-top: 70px; padding: 10px 28px; }
+        }
+
+        /* Animations */
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-fade-in-down { animation: fadeInDown 0.8s ease forwards; }
+        .animate-music-box-in { animation: fadeInUp 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+    </style>
+</head>
+<body class="bg-paper-cream">
+
+    <!-- Background - Matching other pages -->
+    <div class="fixed inset-0 inside-box-container z-0">
+        <div class="silk-tissue opacity-50"></div>
+        <div class="crumpled-effect opacity-10"></div>
+        <div class="absolute inset-0 bg-radial-gradient from-white/10 to-transparent pointer-events-none"></div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="min-h-screen flex flex-col items-center justify-center py-8 px-4 relative z-10">
+        
+        <!-- Enhanced Title Section -->
+        <div class="title-section">
+            <div class="title-ornament">
+                <div class="title-line"></div>
+                <span class="title-diamond">◆</span>
+                <div class="title-line"></div>
+            </div>
+            <h1 class="main-title">
+                A <span>Melody</span> for You
+            </h1>
+            <p class="title-subtitle">Every note carries a memory</p>
+        </div>
+
+        <!-- Music Box (Smaller) -->
+        <div class="music-box-container animate-music-box-in" id="musicBoxContainer">
+            
+            <!-- Hand-drawn Arrow (Desktop) -->
+            <div class="music-box-arrow hidden lg:block">
+                <span class="music-box-arrow-text">Press to Play</span>
+                <svg width="70" height="50" viewBox="0 0 80 60" fill="none" stroke="currentColor" stroke-width="1.5" class="text-vintage-ink">
+                    <path d="M70 10 C 60 30, 40 45, 15 50" stroke-dasharray="4 6" stroke-linecap="round"/>
+                    <path d="M25 44 L15 50 L22 58" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+
+            <!-- Wooden Base -->
+            <div class="music-box-base">
+                
+                <!-- Side Label -->
+                <div class="track-side-label">Side A</div>
+                <div class="track-catalog-number">FY-2024</div>
+
+                <!-- Inner Lining -->
+                <div class="music-box-interior">
+                    
+                    <!-- Vinyl Record -->
+                    <div class="vinyl-record" id="vinylRecord" onclick="togglePlayback()">
+                        
+                        <!-- Label -->
+                        <div class="vinyl-label">
+                            <span class="vinyl-label-text">33 RPM</span>
+                            <span class="vinyl-label-title">For You</span>
+                            <div class="vinyl-spindle"></div>
+                        </div>
+                        
+                    </div>
+
+                    <!-- Tone Arm -->
+                    <div class="tone-arm-container">
+                        <div class="tone-arm-pivot"></div>
+                        <div class="tone-arm" id="toneArm"></div>
+                    </div>
+
+                    <!-- Visualizer Bars -->
+                    <div class="visualizer" id="visualizer">
+                        <div class="visualizer-bar"></div>
+                        <div class="visualizer-bar"></div>
+                        <div class="visualizer-bar"></div>
+                        <div class="visualizer-bar"></div>
+                        <div class="visualizer-bar"></div>
+                    </div>
+
+                </div>
+
+                <!-- Control Panel -->
+                <div class="control-panel">
+                    
+                    <!-- Play/Pause Button -->
+                    <button class="play-button" id="playButton" onclick="togglePlayback()">
+                        <span class="material-symbols-outlined icon-play">play_arrow</span>
+                        <span class="material-symbols-outlined icon-pause">pause</span>
+                    </button>
+
+                    <!-- Volume Control -->
+                    <div class="volume-control">
+                        <span class="material-symbols-outlined volume-icon">volume_mute</span>
+                        <input type="range" class="volume-slider" min="0" max="100" value="60">
+                    </div>
+
+                </div>
+
+            </div>
+            
+            <!-- Track Info Card -->
+            <div class="track-info-card">
+                <div class="track-song-title">Perfect</div>
+                <div class="track-artist">Ed Sheeran</div>
+            </div>
+        </div>
+
+        <!-- Continue Button -->
+        <button class="music-continue-btn" id="musicContinueBtn">
+            Continue
+        </button>
+        
+        <!-- Branding -->
+        <div class="music-continue-brand">
+            <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">diamond</span>
+            <span>For You, Always</span>
+        </div>
+
+    </div>
+
+    <script>
+        let isPlaying = false;
+
+        function togglePlayback() {
+            const vinyl = document.getElementById('vinylRecord');
+            const toneArm = document.getElementById('toneArm');
+            const playBtn = document.getElementById('playButton');
+            const container = document.getElementById('musicBoxContainer');
+            const continueBtn = document.getElementById('musicContinueBtn');
+
+            isPlaying = !isPlaying;
+
+            if (isPlaying) {
+                vinyl.classList.add('playing');
+                toneArm.classList.add('playing');
+                playBtn.classList.add('playing');
+                container.classList.add('playing');
+                
+                setTimeout(() => {
+                    continueBtn.classList.add('visible');
+                }, 3000);
+            } else {
+                vinyl.classList.remove('playing');
+                toneArm.classList.remove('playing');
+                playBtn.classList.remove('playing');
+                container.classList.remove('playing');
+            }
+
+            if ('vibrate' in navigator) navigator.vibrate(25);
+        }
+    </script>
+
+</body>
+</html>

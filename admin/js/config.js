@@ -27,8 +27,16 @@ const PAGE_TYPES = {
             { key: 'letterTitle', label: 'Letter Heading (highlight with <span>)', type: 'text' },
             { key: 'letterBody', label: 'The Main Letter Content', type: 'textarea' },
             { key: 'letterSign', label: 'Your Signature (bottom)', type: 'text' },
-            { key: 'footerText', label: 'Small footer note', type: 'text' },
-            { key: 'musicTrack', label: 'Background Music (Upload/URL)', type: 'file' }
+            { key: 'footerText', label: 'Small footer note', type: 'text' }
+        ]
+    },
+    'music-player': {
+        icon: 'album',
+        name: 'Music Player',
+        description: 'A vintage vinyl music box experience',
+        fields: [
+            { key: 'tracks', label: 'Your Playlist (max 3 songs)', type: 'list', itemType: 'track', maxItems: 3 },
+            { key: 'buttonText', label: 'Continue Button Text', type: 'text' }
         ]
     },
     'lifetime-receipt': {
@@ -149,8 +157,13 @@ const DEFAULT_PAGE_FIELDS = {
         letterTitle: "A <span>Special</span> Letter",
         letterBody: "Write your heart out here...",
         letterSign: "With love, Me",
-        footerText: "P.S. I love you",
-        musicTrack: ""
+        footerText: "P.S. I love you"
+    },
+    'music-player': {
+        tracks: [
+            { songTitle: "Your Song", artist: "Your Artist", audioUrl: "" }
+        ],
+        buttonText: "Continue"
     },
     'lifetime-receipt': {
         birthDate: "2000-01-01",
@@ -235,17 +248,51 @@ const ICON_LIST = [
 // Default config structure
 const DEFAULT_CONFIG = {
     theme: {
-        ribbonColor: "#b33939",
-        paperColor: "#fdfaf1",
+        ribbonColor: "#1e3799",
+        paperColor: "#f1f2f6",
         paperImage: "",
-        cardboardColor: "#c2a382",
-        textColor: "#2d2926"
+        cardboardColor: "#4a69bd",
+        textColor: "#0c2461"
     },
     metadata: {
         customerName: "",
         senderName: ""
     },
-    pages: []
+    pages: [
+        {
+            "type": "memory-box",
+            "topMessage": "Tucked away with love...",
+            "mainTitle": "A Journey through <span>Memories</span>",
+            "boxLabel": "Strictly Private",
+            "boxTarget": "Sarah",
+            "question": "What is my favorite color?",
+            "placeholder": "Try to remember it",
+            "correctAnswer": "blue",
+            "hidden": false
+        },
+        {
+            "type": "music-player",
+            "tracks": [
+                { "songTitle": "Your Song", "artist": "Your Artist", "audioUrl": "" }
+            ],
+            "buttonText": "Continue"
+        },
+        {
+            "type": "inside-box",
+            "greeting": "Happy Birthday,",
+            "letterTitle": "A Letter <span>for You</span>",
+            "letterBody": "Write your heart out here...",
+            "letterSign": "With love, Aldo",
+            "footerText": "The best is yet to come..."
+        },
+        {
+            "type": "lifetime-receipt",
+            "birthDate": "2000-01-01",
+            "title": "Itemized Memory Log",
+            "footerText": "Keep this receipt in your heart.",
+            "buttonText": "Continue"
+        }
+    ]
 };
 
 // Wizard step definitions

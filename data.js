@@ -21,13 +21,19 @@ const CONFIG = {
             "hidden": false
         },
         {
+            "type": "music-player",
+            "tracks": [
+                { "songTitle": "Your Song", "artist": "Your Artist", "audioUrl": "" }
+            ],
+            "buttonText": "Continue"
+        },
+        {
             "type": "inside-box",
-            "greeting": "Happy 23th Birthday,",
-            "letterTitle": "A Letter for someone who once Saved Me",
-            "letterBody": "Hello Stacy, it's been 4 years since we first met, Happy birthday to my Hero, i wish nothing but the Best for you.",
+            "greeting": "Happy Birthday,",
+            "letterTitle": "A Letter <span>for You</span>",
+            "letterBody": "Write your heart out here...",
             "letterSign": "With love, Aldo",
-            "footerText": "The best is yet to come...",
-            "musicTrack": "https://valentine-upload.aldoramadhan16.workers.dev/1770406341166-j4urp.mp3"
+            "footerText": "The best is yet to come..."
         },
         {
             "type": "lifetime-receipt",

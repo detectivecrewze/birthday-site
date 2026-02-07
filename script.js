@@ -701,6 +701,9 @@ window.app = {
             case 'memory-box':
                 this.renderMemoryBox(pageData, container);
                 break;
+            case 'music-player':
+                this.renderMusicPlayer(pageData, container);
+                break;
             case 'message':
                 this.renderMessagePage(pageData, container);
                 break;
@@ -1169,10 +1172,6 @@ window.app = {
                 });
             }, 300);
             this.activeTypewriters.push(timeout1);
-        }
-
-        if (data.musicTrack) {
-            this.playMusic(data.musicTrack);
         }
     },
 
