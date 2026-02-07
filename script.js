@@ -726,9 +726,13 @@ window.app = {
                 this.renderScratchCard(pageData, container);
                 break;
             case 'analog-voice-note':
-                // Fade out background music when entering voice note page
+                // Fade out ALL music sources when entering voice note page
                 if (this.bgMusic && !this.isMuted) {
                     this.fadeVolume(this.bgMusic, 0, 1500);
+                }
+                // Also fade out the Music Player audio (musicBoxAudio)
+                if (this.musicBoxAudio && !this.isMuted) {
+                    this.fadeVolume(this.musicBoxAudio, 0, 1500);
                 }
                 this.renderAnalogVoiceNote(pageData, container);
                 break;
