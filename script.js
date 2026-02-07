@@ -1975,32 +1975,36 @@ window.app = {
                     
                     <!-- Map Pin Navigator -->
                     ${data.pins && data.pins.length > 1 ? `
-                        <div id="map-pin-navigator" class="mt-4 flex items-center justify-center gap-4 opacity-0 transition-all duration-500">
-                            <button id="nav-prev-pin" onclick="app.prevMemoryPin()" 
-                                class="map-nav-btn w-10 h-10 rounded-full bg-white/90 border border-vintage-ink/20 shadow-md flex items-center justify-center hover:bg-ribbon-red hover:text-white hover:border-ribbon-red transition-all duration-300 backdrop-blur-sm">
-                                <span class="material-symbols-outlined text-lg">chevron_left</span>
-                            </button>
-                            <div class="map-nav-counter px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full border border-vintage-ink/10 shadow-sm">
-                                <span class="font-mono text-sm tracking-wide">
-                                    <span id="current-pin-num" class="text-ribbon-red font-bold">1</span>
-                                    <span class="text-vintage-ink/40 mx-1">/</span>
-                                    <span id="total-pins-num" class="text-vintage-ink/60">${data.pins.filter(p => Array.isArray(p.coords) && p.coords.length === 2).length}</span>
-                                </span>
+                        <div id="map-pin-navigator" class="mt-6 flex items-center justify-center opacity-0 transition-all duration-500">
+                            <div class="flex items-center gap-3 px-4 py-2 bg-white/40 backdrop-blur-md border border-vintage-ink/5 rounded-full shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)]">
+                                <button id="nav-prev-pin" onclick="app.prevMemoryPin()" 
+                                    class="map-nav-btn w-9 h-9 rounded-full bg-white border border-vintage-ink/10 shadow-sm flex items-center justify-center hover:bg-ribbon-red hover:text-white hover:border-ribbon-red transition-all duration-300">
+                                    <span class="material-symbols-outlined text-base">chevron_left</span>
+                                </button>
+                                <div class="map-nav-counter px-3 py-1 bg-vintage-ink/5 rounded-full">
+                                    <span class="font-mono text-xs tracking-wider">
+                                        <span id="current-pin-num" class="text-ribbon-red font-bold">1</span>
+                                        <span class="text-vintage-ink/30 mx-1">/</span>
+                                        <span id="total-pins-num" class="text-vintage-ink/60">${data.pins.filter(p => Array.isArray(p.coords) && p.coords.length === 2).length}</span>
+                                    </span>
+                                </div>
+                                <button id="nav-next-pin" onclick="app.nextMemoryPin()" 
+                                    class="map-nav-btn w-9 h-9 rounded-full bg-white border border-vintage-ink/10 shadow-sm flex items-center justify-center hover:bg-ribbon-red hover:text-white hover:border-ribbon-red transition-all duration-300">
+                                    <span class="material-symbols-outlined text-base">chevron_right</span>
+                                </button>
                             </div>
-                            <button id="nav-next-pin" onclick="app.nextMemoryPin()" 
-                                class="map-nav-btn w-10 h-10 rounded-full bg-white/90 border border-vintage-ink/20 shadow-md flex items-center justify-center hover:bg-ribbon-red hover:text-white hover:border-ribbon-red transition-all duration-300 backdrop-blur-sm">
-                                <span class="material-symbols-outlined text-lg">chevron_right</span>
-                            </button>
                         </div>
                     ` : ''}
                 </div>
 
-                <div id="map-continue-btn" class="mt-6 md:mt-10 opacity-0 transition-all duration-1000 relative z-30 transform translate-y-4">
-                    <button onclick="app.nextPage()" class="group flex flex-col items-center gap-2">
-                        <span class="font-body text-vintage-ink/40 text-xs tracking-[0.3em] uppercase hover:text-vintage-ink transition-colors duration-300">
-                            ${data.buttonText || 'Continue'}
-                        </span>
-                        <div class="h-px w-10 bg-vintage-ink/10 group-hover:w-20 group-hover:bg-ribbon-red/40 transition-all duration-500"></div>
+                <div id="map-continue-btn" class="mt-8 md:mt-12 opacity-0 transition-all duration-1000 relative z-30 transform translate-y-4">
+                    <button onclick="app.nextPage()" class="group flex flex-col items-center gap-3">
+                        <div class="px-8 py-3 bg-white/60 backdrop-blur-md border border-vintage-ink/10 rounded-full shadow-sm group-hover:bg-ribbon-red group-hover:border-ribbon-red group-hover:shadow-md transition-all duration-500">
+                            <span class="font-body text-vintage-ink text-xs md:text-sm tracking-[0.3em] uppercase group-hover:text-white transition-colors duration-300">
+                                ${data.buttonText || 'Continue'}
+                            </span>
+                        </div>
+                        <div class="h-px w-0 bg-ribbon-red/40 group-hover:w-20 transition-all duration-700"></div>
                     </button>
 
                     <!-- Brand Logo as Map Credits -->
