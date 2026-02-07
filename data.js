@@ -23,7 +23,16 @@ const CONFIG = {
         {
             "type": "music-player",
             "tracks": [
-                { "songTitle": "Your Song", "artist": "Your Artist", "audioUrl": "" }
+                {
+                    "songTitle": "Ivy",
+                    "artist": "Frank Ocean",
+                    "audioUrl": "https://valentine-upload.aldoramadhan16.workers.dev/1770472183080-6o4t8.mp3"
+                },
+                {
+                    "songTitle": "Always With Me",
+                    "artist": "Spirited Away",
+                    "audioUrl": "https://valentine-upload.aldoramadhan16.workers.dev/1770472492937-f6af6q.mp3"
+                }
             ],
             "buttonText": "Continue"
         },
@@ -56,6 +65,12 @@ const CONFIG = {
                     "url": "https://valentine-upload.aldoramadhan16.workers.dev/1770406581140-kd30hc.jpg",
                     "date": "20 November 2026",
                     "caption": "That safe night.",
+                    "backNote": "This was the coldest night of the year, but I was the warmest I've ever been. Thank you for always being my anchor."
+                },
+                {
+                    "url": "https://valentine-upload.aldoramadhan16.workers.dev/1770471944056-8vnlhb.jpg",
+                    "caption": "Taking a selfie with you.",
+                    "date": "19 November 2025",
                     "backNote": "This was the coldest night of the year, but I was the warmest I've ever been. Thank you for always being my anchor."
                 }
             ],
@@ -109,8 +124,8 @@ const CONFIG = {
     ],
     "adminLang": "en",
     "metadata": {
-        "customerName": "Stacy",
+        "customerName": "John",
         "senderName": "z",
-        "generatedAt": "2026-02-06T21:15:36.783Z"
+        "generatedAt": "2026-02-07T14:44:12.686Z"
     }
 };

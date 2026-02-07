@@ -726,6 +726,10 @@ window.app = {
                 this.renderScratchCard(pageData, container);
                 break;
             case 'analog-voice-note':
+                // Fade out background music when entering voice note page
+                if (this.bgMusic && !this.isMuted) {
+                    this.fadeVolume(this.bgMusic, 0, 1500);
+                }
                 this.renderAnalogVoiceNote(pageData, container);
                 break;
             case 'time-capsule-stitch':
@@ -1964,6 +1968,27 @@ window.app = {
                         <!-- Grain Overlay -->
                         <div class="absolute inset-0 pointer-events-none z-20 opacity-30 mix-blend-multiply" style="background-image: url('assets/textures/stardust.png')"></div>
                     </div>
+                    
+                    <!-- Map Pin Navigator -->
+                    ${data.pins && data.pins.length > 1 ? `
+                        <div id="map-pin-navigator" class="mt-4 flex items-center justify-center gap-4 opacity-0 transition-all duration-500">
+                            <button id="nav-prev-pin" onclick="app.prevMemoryPin()" 
+                                class="map-nav-btn w-10 h-10 rounded-full bg-white/90 border border-vintage-ink/20 shadow-md flex items-center justify-center hover:bg-ribbon-red hover:text-white hover:border-ribbon-red transition-all duration-300 backdrop-blur-sm">
+                                <span class="material-symbols-outlined text-lg">chevron_left</span>
+                            </button>
+                            <div class="map-nav-counter px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full border border-vintage-ink/10 shadow-sm">
+                                <span class="font-mono text-sm tracking-wide">
+                                    <span id="current-pin-num" class="text-ribbon-red font-bold">1</span>
+                                    <span class="text-vintage-ink/40 mx-1">/</span>
+                                    <span id="total-pins-num" class="text-vintage-ink/60">${data.pins.filter(p => Array.isArray(p.coords) && p.coords.length === 2).length}</span>
+                                </span>
+                            </div>
+                            <button id="nav-next-pin" onclick="app.nextMemoryPin()" 
+                                class="map-nav-btn w-10 h-10 rounded-full bg-white/90 border border-vintage-ink/20 shadow-md flex items-center justify-center hover:bg-ribbon-red hover:text-white hover:border-ribbon-red transition-all duration-300 backdrop-blur-sm">
+                                <span class="material-symbols-outlined text-lg">chevron_right</span>
+                            </button>
+                        </div>
+                    ` : ''}
                 </div>
 
                 <div id="map-continue-btn" class="mt-6 md:mt-10 opacity-0 transition-all duration-1000 relative z-30 transform translate-y-4">
@@ -2101,7 +2126,8 @@ window.app = {
         pins: [],
         mapCenter: null,
         mapZoom: null,
-        completed: false
+        completed: false,
+        currentPinIndex: 0
     },
 
     // Initialize map with journey animation
@@ -2118,6 +2144,7 @@ window.app = {
         this.mapJourneyState.pins = data.pins || [];
         this.mapJourneyState.markers = [];
         this.mapJourneyState.completed = false;
+        this.mapJourneyState.currentPinIndex = 0;
 
         const loadingText = document.getElementById('map-loading-text');
 
@@ -2182,6 +2209,12 @@ window.app = {
         if (continueBtn) {
             continueBtn.classList.remove('opacity-0', 'translate-y-4');
         }
+
+        // Show pin navigator (if exists)
+        const pinNavigator = document.getElementById('map-pin-navigator');
+        if (pinNavigator) {
+            pinNavigator.classList.remove('opacity-0');
+        }
     },
 
     // Helper: Validate coordinates are valid numbers
@@ -2194,6 +2227,70 @@ window.app = {
             !isNaN(coord[1]) &&
             isFinite(coord[0]) &&
             isFinite(coord[1]);
+    },
+
+    // ==========================================
+    // MAP PIN NAVIGATOR FUNCTIONS
+    // ==========================================
+
+    // Go to next memory pin
+    nextMemoryPin: function () {
+        const validPins = this.mapJourneyState.pins.filter(p => this.isValidCoord(p.coords));
+        if (validPins.length === 0) return;
+
+        // Move to next index (loop back to 0 if at end)
+        this.mapJourneyState.currentPinIndex = (this.mapJourneyState.currentPinIndex + 1) % validPins.length;
+        this.focusMemoryPin(this.mapJourneyState.currentPinIndex);
+    },
+
+    // Go to previous memory pin
+    prevMemoryPin: function () {
+        const validPins = this.mapJourneyState.pins.filter(p => this.isValidCoord(p.coords));
+        if (validPins.length === 0) return;
+
+        // Move to previous index (loop to end if at 0)
+        this.mapJourneyState.currentPinIndex = (this.mapJourneyState.currentPinIndex - 1 + validPins.length) % validPins.length;
+        this.focusMemoryPin(this.mapJourneyState.currentPinIndex);
+    },
+
+    // Focus on a specific memory pin by index
+    focusMemoryPin: function (index) {
+        const map = this.mapJourneyState.map;
+        const markers = this.mapJourneyState.markers;
+        const validPins = this.mapJourneyState.pins.filter(p => this.isValidCoord(p.coords));
+
+        if (!map || index < 0 || index >= validPins.length) return;
+
+        const pin = validPins[index];
+        const marker = markers[index];
+
+        if (!pin || !this.isValidCoord(pin.coords)) return;
+
+        // Close all popups first
+        map.closePopup();
+
+        // Update the counter UI
+        const counterEl = document.getElementById('current-pin-num');
+        if (counterEl) {
+            counterEl.textContent = index + 1;
+        }
+
+        // Play navigation sound
+        this.playSfx('https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3', 0.15);
+
+        // Fly to the pin location
+        const targetZoom = window.innerWidth < 768 ? 15 : 14;
+        map.flyTo(pin.coords, targetZoom, {
+            duration: 1.2,
+            easeLinearity: 0.25
+        });
+
+        // Open marker popup after flyTo animation completes
+        setTimeout(() => {
+            if (marker) {
+                marker.openPopup();
+            }
+        }, 1300);
     },
 
     // Animate markers appearing one by one with dramatic zoom effect
