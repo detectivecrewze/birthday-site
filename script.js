@@ -1983,7 +1983,7 @@ window.app = {
                                 </button>
                                 <div class="map-nav-counter px-3 py-1 bg-vintage-ink/5 rounded-full">
                                     <span class="font-mono text-xs tracking-wider">
-                                        <span id="current-pin-num" class="text-ribbon-red font-bold">1</span>
+                                        <span id="current-pin-num" class="text-ribbon-red font-bold">0</span>
                                         <span class="text-vintage-ink/30 mx-1">/</span>
                                         <span id="total-pins-num" class="text-vintage-ink/60">${data.pins.filter(p => Array.isArray(p.coords) && p.coords.length === 2).length}</span>
                                     </span>
@@ -2135,7 +2135,7 @@ window.app = {
         mapCenter: null,
         mapZoom: null,
         completed: false,
-        currentPinIndex: 0
+        currentPinIndex: -1
     },
 
     // Initialize map with journey animation
@@ -2152,7 +2152,7 @@ window.app = {
         this.mapJourneyState.pins = data.pins || [];
         this.mapJourneyState.markers = [];
         this.mapJourneyState.completed = false;
-        this.mapJourneyState.currentPinIndex = 0;
+        this.mapJourneyState.currentPinIndex = -1;
 
         const loadingText = document.getElementById('map-loading-text');
 
@@ -2256,8 +2256,13 @@ window.app = {
         const validPins = this.mapJourneyState.pins.filter(p => this.isValidCoord(p.coords));
         if (validPins.length === 0) return;
 
-        // Move to previous index (loop to end if at 0)
-        this.mapJourneyState.currentPinIndex = (this.mapJourneyState.currentPinIndex - 1 + validPins.length) % validPins.length;
+        // If we haven't started yet (-1), go to the last pin
+        if (this.mapJourneyState.currentPinIndex === -1) {
+            this.mapJourneyState.currentPinIndex = validPins.length - 1;
+        } else {
+            // Move to previous index (loop to end if at 0)
+            this.mapJourneyState.currentPinIndex = (this.mapJourneyState.currentPinIndex - 1 + validPins.length) % validPins.length;
+        }
         this.focusMemoryPin(this.mapJourneyState.currentPinIndex);
     },
 
