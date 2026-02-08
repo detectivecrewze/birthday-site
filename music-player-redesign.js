@@ -233,7 +233,7 @@
 
             this.musicBoxAudio = new Audio(audioSrc);
             this.musicBoxAudio.loop = false; // Don't loop single track, we'll handle playlist looping
-            this.musicBoxAudio.volume = 0.6;
+            this.musicBoxAudio.volume = this.isMuted ? 0 : (document.getElementById('volumeSlider')?.value / 100 || 0.6);
             this.musicBoxAudio.setAttribute('data-original-src', url);
 
             // When track ends, go to next track (or loop back)
@@ -250,7 +250,7 @@
         } catch (e) {
             this.musicBoxAudio = new Audio(url);
             this.musicBoxAudio.loop = false;
-            this.musicBoxAudio.volume = 0.6;
+            this.musicBoxAudio.volume = this.isMuted ? 0 : (document.getElementById('volumeSlider')?.value / 100 || 0.6);
 
             this.musicBoxAudio.onended = () => {
                 if (this.musicPlayerState.tracks.length > 1) {
@@ -314,9 +314,12 @@
 
             // Auto-play if was playing before
             if (autoPlay && this.musicBoxAudio) {
+                if (this.isMuted) this.musicBoxAudio.volume = 0;
                 this.musicBoxAudio.play();
-                document.getElementById('vinylRecord')?.classList.add('is-playing');
-                document.getElementById('playButton')?.classList.add('is-playing');
+                document.getElementById('vinylRecord')?.classList.add('playing');
+                document.getElementById('toneArm')?.classList.add('playing');
+                document.getElementById('playButton')?.classList.add('playing');
+                document.getElementById('musicBoxContainer')?.classList.add('playing');
                 document.getElementById('visualizer')?.classList.add('is-active');
             }
         }
@@ -352,6 +355,9 @@
 
             if (this.bgMusic && !this.isMuted) {
                 this.fadeVolume(this.bgMusic, 0, 1000);
+            }
+            if (this.voiceNoteTrack && !this.isMuted) {
+                this.fadeVolume(this.voiceNoteTrack, 0, 1000);
             }
 
             this.musicBoxAudio.play().catch(e => console.log('Audio play failed:', e));

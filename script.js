@@ -1265,6 +1265,15 @@ window.app = {
                 this.fadeVolume(this.bgMusic, 0.3, 1500);
             }
         }
+        if (this.musicBoxAudio) {
+            if (this.isMuted) {
+                this.fadeVolume(this.musicBoxAudio, 0, 1000);
+            } else if (!this.musicBoxAudio.paused) {
+                const targetVol = document.getElementById('volumeSlider')?.value / 100 || 0.6;
+                this.fadeVolume(this.musicBoxAudio, targetVol, 1500);
+            }
+        }
+
         if (this.voiceNoteTrack) {
             if (this.isMuted) {
                 this.fadeVolume(this.voiceNoteTrack, 0, 500);
@@ -2860,9 +2869,11 @@ window.app = {
         }
 
         if (this.voiceNoteTrack.paused) {
-            // Stop BG music completely when starting voice note
             if (this.bgMusic && !this.isMuted) {
                 this.fadeVolume(this.bgMusic, 0, 1000);
+            }
+            if (this.musicBoxAudio && !this.isMuted) {
+                this.fadeVolume(this.musicBoxAudio, 0, 1000);
             }
 
             this.voiceNoteTrack.play().catch(e => { });
@@ -3884,7 +3895,7 @@ window.app = {
             ctx.fill();
 
             // Play scratching sound with control
-            if (scratchAudio.paused) {
+            if (scratchAudio.paused && !this.isMuted) {
                 scratchAudio.play().catch(err => { });
             }
             clearTimeout(scratchTimeout);
@@ -4070,7 +4081,7 @@ window.app = {
             ctx.fill();
 
             // Play scratching sound
-            if (scratchAudio.paused) {
+            if (scratchAudio.paused && !this.isMuted) {
                 scratchAudio.play().catch(err => { });
             }
             clearTimeout(scratchTimeout);
