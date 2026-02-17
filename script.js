@@ -205,7 +205,7 @@ window.app = {
 
     navigateWithTransition: function (targetIndex, force = false) {
         if (force) {
-            this.isTransitioning = false; // Reset to ensure clean state
+            this.isTransitioning = false;
             this.currentPage = targetIndex;
             this.renderPage();
             return;
@@ -213,52 +213,60 @@ window.app = {
 
         this.isTransitioning = true;
         const container = document.getElementById('page-content');
+        const loadingIndicator = document.getElementById('page-loading');
+        
+        // Faster transition duration
+        const fastDuration = 200;
 
         // Play transition sound
         this.playSfx('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3', 0.15);
 
-        // Phase 1: Fade out current page with a dramatic effect
-        if (container) {
-            container.style.transition = `all ${this.transitionDuration}ms cubic-bezier(0.4, 0, 0.2, 1)`;
-            container.style.opacity = '0';
-            container.style.transform = 'scale(0.95) translateY(20px)';
-            container.style.filter = 'blur(4px)';
+        // Show loading overlay IMMEDIATELY (no white flash)
+        if (loadingIndicator) {
+            loadingIndicator.classList.remove('opacity-0', 'pointer-events-none');
+            loadingIndicator.classList.add('opacity-100');
         }
 
-        // Phase 2: Wait for fade out + pause, then change page and fade in
+        // Phase 1: Quick fade out
+        if (container) {
+            container.style.transition = `all ${fastDuration}ms ease-out`;
+            container.style.opacity = '0';
+            container.style.transform = 'scale(0.98)';
+        }
+
+        // Phase 2: Render new page quickly
         setTimeout(() => {
             this.currentPage = targetIndex;
             this.renderPage();
-
-            // Scroll to top immediately
             window.scrollTo({ top: 0, behavior: 'instant' });
 
-            // Prepare for fade in - start from hidden state
+            // Prepare container for fade in
             if (container) {
-                container.style.opacity = '0';
-                container.style.transform = 'scale(1.05) translateY(-20px)';
-                container.style.filter = 'blur(4px)';
+                container.style.transform = 'scale(1.02)';
             }
 
-            // Phase 3: Fade in with dramatic effect (after 0.3s pause)
+            // Phase 3: Hide loading and fade in quickly
             setTimeout(() => {
-                if (container) {
-                    container.style.opacity = '1';
-                    container.style.transform = 'scale(1) translateY(0)';
-                    container.style.filter = 'blur(0px)';
+                if (loadingIndicator) {
+                    loadingIndicator.classList.remove('opacity-100');
+                    loadingIndicator.classList.add('opacity-0', 'pointer-events-none');
                 }
 
-                // Clear transitioning flag after animation completes
+                if (container) {
+                    container.style.opacity = '1';
+                    container.style.transform = 'scale(1)';
+                }
+
+                // Cleanup
                 setTimeout(() => {
                     this.isTransitioning = false;
                     if (container) {
                         container.style.transition = '';
                         container.style.transform = '';
-                        container.style.filter = '';
                     }
-                }, this.transitionDuration);
-            }, 300); // 0.3s pause between fade out and fade in
-        }, this.transitionDuration);
+                }, fastDuration);
+            }, 100);
+        }, fastDuration);
     },
 
     takeScreenshot: function () {

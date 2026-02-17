@@ -20,6 +20,13 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="assets/favicon/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="assets/favicon/favicon.svg" />
+    <link rel="shortcut icon" href="assets/favicon/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/favicon/apple-touch-icon.png" />
+    <link rel="manifest" href="assets/favicon/site.webmanifest" />
+
     <!-- Dependencies -->
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link
@@ -102,7 +109,16 @@
 
     <!-- App Container -->
     <div id="app-container" class="relative z-10 min-h-screen">
-        <div id="page-content">
+        <!-- Page Loading Indicator -->
+        <div id="page-loading"
+            class="fixed inset-0 z-[9998] flex items-center justify-center bg-[#e6dec1] opacity-0 pointer-events-none transition-opacity duration-300">
+            <div class="flex flex-col items-center">
+                <div class="w-16 h-16 border-3 border-ribbon-red/20 border-t-ribbon-red rounded-full animate-spin">
+                </div>
+                <p class="mt-4 font-serif italic text-vintage-ink/50 text-sm tracking-widest">Turning the page...</p>
+            </div>
+        </div>
+        <div id="page-content" class="bg-[#e6dec1] min-h-screen">
             <!-- Dynamic Content Injected Here -->
         </div>
     </div>
